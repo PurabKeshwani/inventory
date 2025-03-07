@@ -70,7 +70,7 @@ class ComponentController extends GetxController {
       } else if (RegExp(r'ESP-CAM').hasMatch(elem)) {
         CompName.value = 'ESP CAMERA';
         Boxname.value = 'MC-02';
-      } else if (RegExp(r'STM').hasMatch(elem)) {
+      } else if (RegExp(r'STM-32').hasMatch(elem)) {
         CompName.value = 'STM-32F401';
         Boxname.value = 'MC-04';
       } else if (RegExp(r'ARD-UNO').hasMatch(elem)) {
@@ -130,7 +130,7 @@ class ComponentController extends GetxController {
       } else if (RegExp(r'ARD-MEGA').hasMatch(elem)) {
         CompName.value = 'Arduino mega';
         Boxname.value = 'MC-01';
-      } else if (RegExp(r'STM-LINK').hasMatch(elem)) {
+      } else if (RegExp(r'STMST-LINK').hasMatch(elem)) {
         CompName.value = 'ST-LINK V2';
         Boxname.value = 'MC-04';
       } else if (RegExp(r'4K-FPGA').hasMatch(elem)) {
@@ -144,6 +144,9 @@ class ComponentController extends GetxController {
         Boxname.value = 'MC-05';
       } else if (RegExp(r'GPIO-EXT').hasMatch(elem)) {
         CompName.value = 'GPIO Extention';
+        Boxname.value = 'MC-03';
+      } else if (RegExp(r'MPPT-SOLAR').hasMatch(elem)) {
+        CompName.value = 'MPPT Solar Charge Controller';
         Boxname.value = 'MC-03';
       }
     } else if (RegExp(r'^SN').hasMatch(elem)) {
@@ -190,8 +193,11 @@ class ComponentController extends GetxController {
       } else if (RegExp(r'SN-MPXV5').hasMatch(elem)) {
         CompName.value = 'pressure sensor (MPXV5100DP)';
         Boxname.value = 'SN-01';
+      } else if (RegExp(r'SN-LDR-MOD').hasMatch(elem)) {
+        CompName.value = 'LDR Module';
+        Boxname.value = 'SN-01';
       } else if (RegExp(r'SN-LDR').hasMatch(elem)) {
-        CompName.value = 'LDR sensor';
+        CompName.value = 'LDR Sensor';
         Boxname.value = 'SN-01';
       } else if (RegExp(r'SN-CLR').hasMatch(elem)) {
         CompName.value = 'Colour sensor';
@@ -229,6 +235,10 @@ class ComponentController extends GetxController {
       } else if (RegExp(r'SN-LIDAR').hasMatch(elem)) {
         CompName.value = 'RP-Lidar Sensor';
         Boxname.value = 'SN-01';
+        Boxname.value = 'SN-01';
+      } else if (RegExp(r'SN-LIDAR-COMMON').hasMatch(elem)) {
+        CompName.value = 'RP-Lidar AM-18';
+        Boxname.value = 'SN-01';
       } else if (RegExp(r'SN-TTL-FTDI').hasMatch(elem)) {
         CompName.value = 'FTDI';
         Boxname.value = 'SN-01';
@@ -246,6 +256,27 @@ class ComponentController extends GetxController {
         Boxname.value = 'SN-01';
       } else if (RegExp(r'SN-NTC').hasMatch(elem)) {
         CompName.value = 'NTC COMMON';
+        Boxname.value = 'SN-01';
+      } else if (RegExp(r'SN-MQ135').hasMatch(elem)) {
+        CompName.value = 'Smoke Sensor';
+        Boxname.value = 'SN-01';
+      } else if (RegExp(r'SN-LASER-REC').hasMatch(elem)) {
+        CompName.value = 'Laser Receiver';
+        Boxname.value = 'SN-01';
+      } else if (RegExp(r'SN-LASER-MOD').hasMatch(elem)) {
+        CompName.value = 'Laser Module';
+        Boxname.value = 'SN-01';
+      } else if (RegExp(r'SN-RFID').hasMatch(elem)) {
+        CompName.value = 'RFID Sensor';
+        Boxname.value = 'SN-01';
+      } else if (RegExp(r'SN-IR-REC-COMMON').hasMatch(elem)) {
+        CompName.value = 'IR Receiver';
+        Boxname.value = 'SN-01';
+      } else if (RegExp(r'SN-LINE-FOLLOW').hasMatch(elem)) {
+        CompName.value = 'Line Follow Sensor';
+        Boxname.value = 'SN-01';
+      } else if (RegExp(r'SN-METAL').hasMatch(elem)) {
+        CompName.value = 'Metal Sensor';
         Boxname.value = 'SN-01';
       }
     } else if (RegExp(r'^CM').hasMatch(elem)) {
@@ -324,14 +355,14 @@ class ComponentController extends GetxController {
         CompName.value = 'Servo motors';
         Boxname.value = 'AC-01';
       } else if (RegExp(r'AC-L9110-DRV').hasMatch(elem)) {
-        CompName.value = 'L9110 Motor drive';
+        CompName.value = 'L9110 Motor driver';
         Boxname.value = 'AC-04';
       } else if (RegExp(r'AC-GEAR-MTR-DRV').hasMatch(elem)) {
         CompName.value = 'Gear Motor Driver 5V';
         Boxname.value = 'AC-02';
       } else if (RegExp(r'AC-SLND-LCK').hasMatch(elem)) {
         CompName.value = 'Solenoid Lock';
-        Boxname.value = 'AC-06';
+        Boxname.value = 'AC-03';
       } else if (RegExp(r'AC-RLY-MOD1').hasMatch(elem)) {
         CompName.value = 'Relay module';
         Boxname.value = 'AC-06';
@@ -350,21 +381,15 @@ class ComponentController extends GetxController {
       } else if (RegExp(r'AC-N20-MTR').hasMatch(elem)) {
         CompName.value = 'N20 Encoded DC Motor';
         Boxname.value = 'AC-02';
-      } else if (RegExp(r'').hasMatch(elem)) {
-        CompName.value = 'MG-90';
-        Boxname.value = 'AC-05';
-      } else if (RegExp(r'').hasMatch(elem)) {
-        CompName.value = 'L293 motor driver';
-        Boxname.value = 'AC-03';
-      } else if (RegExp(r'').hasMatch(elem)) {
-        CompName.value = 'MG-95';
-        Boxname.value = 'AC-05';
-      } else if (RegExp(r'').hasMatch(elem)) {
-        CompName.value = 'motor driver heads';
-        Boxname.value = 'AC-07';
-      } else if (RegExp(r'').hasMatch(elem)) {
+      } else if (RegExp(r'AC-SOLENOID-PUMP').hasMatch(elem)) {
         CompName.value = 'Solenoid Pump';
-        Boxname.value = '';
+        Boxname.value = 'AC-02';
+      } else if (RegExp(r'AC-MTR-L298').hasMatch(elem)) {
+        CompName.value = 'L298 Driver';
+        Boxname.value = 'AC-02';
+      } else if (RegExp(r'AC-STEPPER-DRIVER').hasMatch(elem)) {
+        CompName.value = 'Stepper Motor Driver';
+        Boxname.value = 'AC-02';
       }
     } else if (RegExp(r'^DI').hasMatch(elem)) {
       ClassName.value = 'Displays and Indicators';
@@ -407,21 +432,15 @@ class ComponentController extends GetxController {
       } else if (RegExp(r'DI-LCD-20').hasMatch(elem)) {
         CompName.value = 'LCD 20 x 4';
         Boxname.value = 'DI-02';
-      } else if (RegExp(r'').hasMatch(elem)) {
-        CompName.value = '4 digit 7 segment';
-        Boxname.value = 'DI-01';
-      } else if (RegExp(r'').hasMatch(elem)) {
-        CompName.value = 'RF ID cards';
-        Boxname.value = '';
-      } else if (RegExp(r'').hasMatch(elem)) {
-        CompName.value = 'Digital Oscilloscope';
-        Boxname.value = '';
-      } else if (RegExp(r'').hasMatch(elem)) {
-        CompName.value = 'webcam';
-        Boxname.value = '';
-      } else if (RegExp(r'').hasMatch(elem)) {
-        CompName.value = 'LCD 3.5 INCH';
-        Boxname.value = 'DI';
+      } else if (RegExp(r'DI-RFID-TAG').hasMatch(elem)) {
+        CompName.value = 'RFID TAG';
+        Boxname.value = 'DI-02';
+      } else if (RegExp(r'DI-RFID-CARD').hasMatch(elem)) {
+        CompName.value = 'RFID CARD';
+        Boxname.value = 'DI-02';
+      } else if (RegExp(r'DI-LCD-3508').hasMatch(elem)) {
+        CompName.value = 'LCD 3.5 inch';
+        Boxname.value = 'DI-02';
       }
     } else if (RegExp(r'^AM').hasMatch(elem)) {
       ClassName.value = 'Audio Modules';
@@ -597,7 +616,7 @@ class ComponentController extends GetxController {
         CompName.value = 'LM317';
         Boxname.value = 'PC-01';
       }
-    } else if (RegExp(r'^CS').hasMatch(elem)) {
+    } else if (RegExp(r'^CS').hasMatch(elem) || RegExp(r'^OM').hasMatch(elem)) {
       ClassName.value = 'Connectors and Switches';
       if (RegExp(r'CS-LUGS').hasMatch(elem)) {
         CompName.value = 'Lugs';
@@ -662,6 +681,9 @@ class ComponentController extends GetxController {
       } else if (RegExp(r'GPIO extension board').hasMatch(elem)) {
         CompName.value = 'GPIO extension board';
         Boxname.value = 'CS-01';
+      } else if (RegExp(r'OM-SOP16').hasMatch(elem)) {
+        CompName.value = 'SOP16';
+        Boxname.value = 'CS-01';
       }
     } else if (RegExp(r'^PW').hasMatch(elem)) {
       ClassName.value = 'Power Components';
@@ -685,6 +707,9 @@ class ComponentController extends GetxController {
         Boxname.value = 'PW-01';
       } else if (RegExp(r'PW-CHR').hasMatch(elem)) {
         CompName.value = 'Charger';
+        Boxname.value = 'PW-01';
+      } else if (RegExp(r'PW-DRIVER').hasMatch(elem)) {
+        CompName.value = 'PWM Motor Driver';
         Boxname.value = 'PW-01';
       }
     }

@@ -23,5 +23,6 @@ class Microcontrollers {
     Component(name: 'SipeedTangNano 4K FPGA board', boxNo: 'MC-04', stock: 2),
     Component(name: 'SD CARD', boxNo: 'MC-03', stock: 20),
     Component(name: 'SD Card Reader', boxNo: 'MC-03', stock: 9),
+    Component(name: 'MPPT Solar Charge Controller', boxNo: 'MC-03', stock: 9),
   ];
 }

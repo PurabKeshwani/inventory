@@ -21,6 +21,9 @@ class Displaysandindicators {
     Component(name: 'LCD with shield', boxNo: '', stock: 1),
     Component(name: 'LCD 16X2', boxNo: '', stock: 2),
     Component(name: 'LCD 20 x 4', boxNo: '', stock: 5),
+    Component(name: 'LCD 3.5 inch', boxNo: '', stock: 5),
+    Component(name: 'RFID TAG', boxNo: '', stock: 5),
+    Component(name: 'RFID CARD', boxNo: '', stock: 5),
   ];
 
   Displaysandindicators() {

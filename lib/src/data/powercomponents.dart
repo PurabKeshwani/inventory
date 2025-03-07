@@ -21,5 +21,6 @@ class Powercomponents {
         stock: 0), // Assuming stock is 0 since not provided
     Component(name: 'battery 9v', boxNo: '', stock: 5),
     Component(name: 'Charger', boxNo: '', stock: 5),
+    Component(name: 'PWM Motor Driver', boxNo: '', stock: 5),
   ];
 }
