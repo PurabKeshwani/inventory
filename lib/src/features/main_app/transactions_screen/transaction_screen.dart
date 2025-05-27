@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/main_app/cartscreen.dart/cartscreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
@@ -128,276 +129,456 @@ class _TransactionScreenState extends State<TransactionScreen> {
     }
   }
 
+  Future<void> _processBarcode(String scanResult) async {
+    print('DEBUG: Processing barcode: $scanResult');
+
+    if (!mounted) return;
+
+    setState(() {
+      _scanBarcode = scanResult;
+      barcode = scanResult;
+      print('DEBUG: Updated barcode state: $barcode');
+    });
+
+    if (componentcontroller != null) {
+      try {
+        componentcontroller.skuidanalyze(barcode);
+        print(
+            'DEBUG: SKUID analyzed - ClassName: ${componentcontroller.ClassName.value}');
+
+        final hasStock = await checkStockAvailability(barcode);
+        print('DEBUG: Stock check result: $hasStock');
+
+        if (!hasStock) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('No stock available for this component'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
+        if (mounted) {
+          setState(() {
+            final newComponent = Cartcomponent(
+              compname: componentcontroller.CompName.value,
+              skuid: barcode,
+              Quantity: componentcontroller.Quantity.value,
+            );
+            componentcontroller.Cartcomponents.add(newComponent);
+            print(
+                'DEBUG: Added to cart - ${newComponent.compname} (${newComponent.skuid})');
+            print(
+                'DEBUG: Current cart size: ${componentcontroller.Cartcomponents.length}');
+          });
+        }
+      } catch (e) {
+        print('DEBUG: Error processing barcode: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error processing barcode: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } else {
+      print('DEBUG: Component controller is null');
+    }
+  }
+
+  Future<void> _startBarcodeScan() async {
+    try {
+      print('DEBUG: Starting barcode scan');
+
+      // Request camera permission first
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        print('DEBUG: Camera permission denied');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Camera permission is required for scanning'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      print('DEBUG: Camera permission granted, starting scan');
+
+      if (!mounted) return;
+
+      // Show scanner in a dialog
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            height: 400,
+            width: 350,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color(0xff19335A),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Scan Barcode',
+                        style: GoogleFonts.lato(
+                          textStyle: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                // Scanner
+                Expanded(
+                  child: Stack(
+                    children: [
+                      MobileScanner(
+                        onDetect: (capture) {
+                          final List<Barcode> barcodes = capture.barcodes;
+                          if (barcodes.isNotEmpty) {
+                            final String? code = barcodes.first.rawValue;
+                            if (code != null && code.isNotEmpty) {
+                              print('DEBUG: Barcode detected: $code');
+                              Navigator.pop(context); // Close scanner
+                              _processBarcode(code);
+                            }
+                          }
+                        },
+                      ),
+                      // Scanner overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        margin: EdgeInsets.all(40),
+                      ),
+                      // Corner markers
+                      Positioned(
+                        top: 40,
+                        left: 40,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Colors.white, width: 3),
+                              left: BorderSide(color: Colors.white, width: 3),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 40,
+                        right: 40,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Colors.white, width: 3),
+                              right: BorderSide(color: Colors.white, width: 3),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 40,
+                        left: 40,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: Colors.white, width: 3),
+                              left: BorderSide(color: Colors.white, width: 3),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 40,
+                        right: 40,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: Colors.white, width: 3),
+                              right: BorderSide(color: Colors.white, width: 3),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Footer
+              ],
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      print('DEBUG: Error in scanner: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error accessing scanner: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          height: MediaQuery.of(context).size.height * 1,
-          width: MediaQuery.of(context).size.width * 1,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color.fromARGB(255, 154, 210, 255),
-                Color.fromARGB(255, 213, 245, 252),
-                Color.fromARGB(255, 242, 254, 255)
-              ],
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-            ),
+      body: Container(
+        height: MediaQuery.of(context).size.height * 1,
+        width: MediaQuery.of(context).size.width * 1,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color.fromARGB(255, 154, 210, 255),
+              Color.fromARGB(255, 213, 245, 252),
+              Color.fromARGB(255, 242, 254, 255)
+            ],
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () async {
-                  // Proceed with barcode scanning
-                  String barcodeScanRes;
-                  try {
-                    barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-                        '#ff6666', 'Cancel', true, ScanMode.BARCODE);
-                    print('Scanned barcode: $barcodeScanRes');
-                  } on PlatformException {
-                    barcodeScanRes = 'Failed to get platform version.';
-                  }
-
-                  if (!mounted) return;
-
-                  setState(() {
-                    _scanBarcode = barcodeScanRes;
-                    barcode = _scanBarcode;
-                  });
-
-                  // Only proceed if we got a valid barcode
-                  if (barcodeScanRes != '-1' &&
-                      barcodeScanRes != 'Failed to get platform version.') {
-                    // Analyze the SKUID to set ClassName, CompName, and Boxname
-                    componentcontroller.skuidanalyze(barcode);
-
-                    // Debug: Print the ClassName after analyzing the SKUID
-                    print(
-                        'ClassName after skuidanalyze: ${componentcontroller.ClassName.value}');
-
-                    // Check stock availability before proceeding
-                    bool hasStock = await checkStockAvailability(barcode);
-                    print('Has stock: $hasStock');
-
-                    if (!hasStock) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content:
-                              Text('No stock available for this component'),
-                          backgroundColor: Colors.red,
+        ),
+        child: Column(
+          children: [
+            // Fixed header section
+            Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Column(
+                children: [
+                  TextButton(
+                    onPressed: () => _startBarcodeScan(),
+                    child: Container(
+                      width: 300,
+                      decoration: const BoxDecoration(
+                        color: Color(0xff19335A),
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Scan to issue component',
+                        style: GoogleFonts.lato(
+                          textStyle: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
                         ),
-                      );
-                      return;
-                    }
-
-                    // If stock is available, proceed with adding to cart
-                    setState(() {
-                      componentcontroller.Cartcomponents.add(Cartcomponent(
-                          compname: componentcontroller.CompName.value,
-                          skuid: barcode,
-                          Quantity: componentcontroller.Quantity.value));
-                    });
-                  }
-                },
-                child: Container(
-                  width: 300,
-                  decoration: const BoxDecoration(
-                    color: Color(0xff19335A),
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  alignment: Alignment.center,
-                  child: Text(
-                    'Scan to issue component',
-                    style: GoogleFonts.lato(
-                      textStyle: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
                       ),
                     ),
                   ),
-                ),
-              ),
-              SizedBox(
-                height: 5,
-              ),
-              TextButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Enter Transaction ID'),
-                        content: TextField(
-                          controller: returnTransactionIdController,
-                          decoration: InputDecoration(
-                            hintText: 'Transaction ID',
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              print(
-                                  'Transaction ID from dialog: ${returnTransactionIdController.text}');
-                              componentcontroller.transactionid.value =
-                                  returnTransactionIdController.text;
-                              print(
-                                  'Transaction ID from controller: ${componentcontroller.transactionid.value}');
-                              await fetchTransactionComponents(
-                                  returnTransactionIdController.text);
-                              Navigator.pop(context);
-                              returnTransactionIdController.clear();
-                            },
-                            child: Text('Submit'),
-                          ),
-                        ],
+                  SizedBox(height: 5),
+                  TextButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('Enter Transaction ID'),
+                            content: TextField(
+                              controller: returnTransactionIdController,
+                              decoration: InputDecoration(
+                                hintText: 'Transaction ID',
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  print(
+                                      'Transaction ID from dialog: ${returnTransactionIdController.text}');
+                                  componentcontroller.transactionid.value =
+                                      returnTransactionIdController.text;
+                                  print(
+                                      'Transaction ID from controller: ${componentcontroller.transactionid.value}');
+                                  await fetchTransactionComponents(
+                                      returnTransactionIdController.text);
+                                  Navigator.pop(context);
+                                  returnTransactionIdController.clear();
+                                },
+                                child: Text('Submit'),
+                              ),
+                            ],
+                          );
+                        },
                       );
                     },
-                  );
-                },
-                child: Container(
-                  width: 300,
-                  decoration: const BoxDecoration(
-                    color: Color(0xff19335A),
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  alignment: Alignment.center,
-                  child: Text(
-                    'Enter Return Transaction ID',
-                    style: GoogleFonts.lato(
-                      textStyle: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
+                    child: Container(
+                      width: 300,
+                      decoration: const BoxDecoration(
+                        color: Color(0xff19335A),
+                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Enter Return Transaction ID',
+                        style: GoogleFonts.lato(
+                          textStyle: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-              SizedBox(
-                height: 20,
-              ),
-              Expanded(
-                child: ListView.builder(
-                    shrinkWrap: true, // Add this
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: componentcontroller.Cartcomponents.length,
-                    itemBuilder: (ctx, index) {
-                      final component =
-                          componentcontroller.Cartcomponents[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 15, vertical: 10),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.8,
-                          height: 130,
-                          decoration: BoxDecoration(
-                              color: Color.fromARGB(39, 5, 168, 244),
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(16),
-                              )),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            SizedBox(height: 20),
+            // Scrollable list section
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 15),
+                itemCount: componentcontroller.Cartcomponents.length,
+                itemBuilder: (ctx, index) {
+                  final component = componentcontroller.Cartcomponents[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      height: 130,
+                      decoration: BoxDecoration(
+                        color: Color.fromARGB(39, 5, 168, 244),
+                        borderRadius: BorderRadius.all(Radius.circular(16)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 10, left: 10),
+                                child: Text(
+                                  component.skuid,
+                                  style: GoogleFonts.lato(
+                                      color: Colors.black, fontSize: 20),
+                                ),
+                              ),
+                              SizedBox(width: 55, height: 0.2),
+                              IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    componentcontroller.Cartcomponents.remove(
+                                        component);
+                                  });
+                                },
+                                icon: Icon(Icons.delete, color: Colors.red),
+                              )
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(height: 10),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 10, left: 10),
+                                child: Text(
+                                  component.compname,
+                                  style: GoogleFonts.lato(
+                                      color: Colors.black, fontSize: 15),
+                                ),
+                              ),
+                              SizedBox(width: 20),
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        top: 10, left: 10),
-                                    child: Text(
-                                      component.skuid,
-                                      style: GoogleFonts.lato(
-                                          color: Colors.black, fontSize: 20),
-                                    ),
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        component.Quantity =
+                                            component.Quantity - 1;
+                                      });
+                                    },
+                                    icon: Icon(Icons.remove),
                                   ),
-                                  SizedBox(
-                                    width: 55,
-                                    height: 0.2,
+                                  Text(
+                                    component.Quantity.toString(),
+                                    style: GoogleFonts.lato(
+                                        color: Colors.black, fontSize: 20),
                                   ),
                                   IconButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          componentcontroller.Cartcomponents
-                                              .remove(component);
-                                        });
-                                      },
-                                      icon: Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
-                                      ))
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  const SizedBox(
-                                    height: 10,
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        top: 10, left: 10),
-                                    child: Text(component.compname,
-                                        style: GoogleFonts.lato(
-                                            color: Colors.black, fontSize: 15)),
-                                  ),
-                                  SizedBox(
-                                    width: 20,
-                                  ),
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              component.Quantity =
-                                                  component.Quantity - 1;
-                                            });
-                                          },
-                                          icon: Icon(Icons.remove)),
-                                      Text(
-                                        component.Quantity.toString(),
-                                        style: GoogleFonts.lato(
-                                            color: Colors.black, fontSize: 20),
-                                      ),
-                                      IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              component.Quantity =
-                                                  component.Quantity + 1;
-                                            });
-                                          },
-                                          icon: Icon(Icons.add)),
-                                    ],
+                                    onPressed: () {
+                                      setState(() {
+                                        component.Quantity =
+                                            component.Quantity + 1;
+                                      });
+                                    },
+                                    icon: Icon(Icons.add),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                        ),
-                      );
-                    }),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-              SizedBox(
-                height: 20,
-              ),
-              TextButton(
+            ),
+            // Fixed footer section
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: TextButton(
                 onPressed: () {
                   print(
                       'Navigating with Transaction ID: ${componentcontroller.transactionid.value}');
@@ -423,9 +604,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     ),
                   ),
                 ),
-              )
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );

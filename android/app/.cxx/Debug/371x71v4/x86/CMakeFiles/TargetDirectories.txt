@@ -1,0 +1,2 @@
+D:/isa/inventory/android/app/.cxx/Debug/371x71v4/x86/CMakeFiles/edit_cache.dir
+D:/isa/inventory/android/app/.cxx/Debug/371x71v4/x86/CMakeFiles/rebuild_cache.dir

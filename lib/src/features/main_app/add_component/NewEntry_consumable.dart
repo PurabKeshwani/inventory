@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class NewConsumableentry extends StatefulWidget {
   const NewConsumableentry({super.key});
@@ -20,41 +21,263 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
   final supabase = Supabase.instance.client;
   final TextEditingController boxnocontroller = TextEditingController();
   final TextEditingController stockcontroller = TextEditingController();
+
+  Future<void> _startBarcodeScan() async {
+    try {
+      print('DEBUG: Starting barcode scan');
+
+      // Request camera permission first
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        print('DEBUG: Camera permission denied');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Camera permission is required for scanning'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      print('DEBUG: Camera permission granted, starting scan');
+
+      if (!mounted) return;
+
+      // Show scanner in a dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            height: 400,
+            width: 350,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color(0xff19335A),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Scan Barcode',
+                        style: GoogleFonts.lato(
+                          textStyle: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                // Scanner
+                Expanded(
+                  child: Stack(
+                    children: [
+                      MobileScanner(
+                        onDetect: (capture) async {
+                          final List<Barcode> barcodes = capture.barcodes;
+                          if (barcodes.isNotEmpty) {
+                            final String? code = barcodes.first.rawValue;
+                            if (code != null && code.isNotEmpty) {
+                              print('DEBUG: Barcode detected: $code');
+                              // Add haptic feedback
+                              HapticFeedback.mediumImpact();
+                              // Close scanner first
+                              Navigator.pop(context);
+                              // Process barcode after scanner is closed
+                              await _processBarcode(code);
+                            }
+                          }
+                        },
+                      ),
+                      // Scanner overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.white,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        margin: EdgeInsets.all(40),
+                      ),
+                      // Corner markers
+                      Positioned(
+                        top: 40,
+                        left: 40,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Colors.white, width: 3),
+                              left: BorderSide(color: Colors.white, width: 3),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 40,
+                        right: 40,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Colors.white, width: 3),
+                              right: BorderSide(color: Colors.white, width: 3),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 40,
+                        left: 40,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: Colors.white, width: 3),
+                              left: BorderSide(color: Colors.white, width: 3),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 40,
+                        right: 40,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: Colors.white, width: 3),
+                              right: BorderSide(color: Colors.white, width: 3),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Footer
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.info_outline, color: Color(0xff19335A)),
+                      SizedBox(width: 8),
+                      Text(
+                        'Position the barcode within the frame',
+                        style: GoogleFonts.lato(
+                          textStyle: TextStyle(
+                            color: Color(0xff19335A),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      print('DEBUG: Error in scanner: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error accessing scanner: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _processBarcode(String scanResult) async {
+    try {
+      print('DEBUG: Processing barcode: $scanResult');
+      if (!mounted) return;
+
+      // Update the barcode controller
+      setState(() {
+        barcodecontroller.text = scanResult;
+      });
+
+      // Analyze the SKU ID
+      componentcontroller.skuidanalyze(scanResult);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Barcode scanned successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Error processing barcode: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error processing barcode: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    String _scanBarcode = 'Unknown';
-    String boxno = '';
     return Column(
       children: [
-        SizedBox(
-          height: 40,
-        ),
+        SizedBox(height: 40),
         TextButton(
-          onPressed: () async {
-            barcodecontroller.clear();
-            componentcontroller.namecontroller.clear();
-
-            String barcodeScanRes;
-            // Platform messages may fail, so we use a try/catch PlatformException.
-            try {
-              barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-                  '#ff6666', 'Cancel', true, ScanMode.BARCODE);
-              print(barcodeScanRes);
-            } on PlatformException {
-              barcodeScanRes = 'Failed to get platform version.';
-            }
-
-            // If the widget was removed from the tree while the asynchronous platform
-            // message was in flight, we want to discard the reply rather than calling
-            // setState to update our non-existent appearance.
-            if (!mounted) return;
-
-            setState(() {
-              _scanBarcode = barcodeScanRes;
-              barcodecontroller.text = _scanBarcode;
-              componentcontroller.skuidanalyze(barcodecontroller.text);
-            });
-          },
+          onPressed: _startBarcodeScan,
           child: Container(
             width: 300,
             decoration: const BoxDecoration(
@@ -82,30 +305,6 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
             ),
           ),
         ),
-
-        //  Padding(
-        //       padding: const EdgeInsets.all(25.0),
-        //       child: Container(
-        //         decoration: BoxDecoration(
-        //           border: Border.all(color: Color.fromARGB(255, 4, 13, 56)),
-        //           borderRadius: BorderRadius.all(Radius.circular(8)),
-        //         ),
-        //         child: TextFormField(
-
-        //           controller: barcodecontroller,
-        //           maxLines: 6,
-        //           minLines: 1,
-        //           style: TextStyle(color: Colors.white),
-        //           decoration: InputDecoration(
-        //             border: OutlineInputBorder(),
-        //             label: Text(
-        //               "SKU ID",
-        //               style: GoogleFonts.lato(textStyle: TextStyle(color: const Color.fromARGB(255, 136, 136, 136))),
-        //             ),
-        //           ),
-        //         ),
-        //       ),
-        //     ),
         Padding(
           padding: const EdgeInsets.all(25.0),
           child: Container(
@@ -123,14 +322,14 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
                 label: Text(
                   "Name",
                   style: GoogleFonts.lato(
-                      textStyle:
-                          TextStyle(color: Color.fromARGB(255, 141, 141, 141))),
+                    textStyle:
+                        TextStyle(color: Color.fromARGB(255, 141, 141, 141)),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-
         Row(
           children: [
             Padding(
@@ -151,8 +350,9 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
                     label: Text(
                       "Box No.",
                       style: GoogleFonts.lato(
-                          textStyle:
-                              TextStyle(color: Color.fromARGB(255, 6, 6, 6))),
+                        textStyle:
+                            TextStyle(color: Color.fromARGB(255, 6, 6, 6)),
+                      ),
                     ),
                   ),
                 ),
@@ -176,8 +376,9 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
                     label: Text(
                       "Stock",
                       style: GoogleFonts.lato(
-                          textStyle:
-                              TextStyle(color: Color.fromARGB(255, 6, 6, 6))),
+                        textStyle:
+                            TextStyle(color: Color.fromARGB(255, 6, 6, 6)),
+                      ),
                     ),
                   ),
                 ),
@@ -185,19 +386,37 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
             ),
           ],
         ),
-
-        SizedBox(
-          height: 40,
-        ),
+        SizedBox(height: 40),
         TextButton(
           onPressed: () async {
-            await supabase.from(componentcontroller.ClassName.value).insert({
-              'skuid':barcodecontroller.text,
-              'stock': stockcontroller.text,
-              'name': componentcontroller.CompName.value,
-              'boxno': componentcontroller.Boxname.value
-            });
-            Navigator.pop(context);
+            try {
+              await supabase.from(componentcontroller.ClassName.value).insert({
+                'skuid': barcodecontroller.text,
+                'stock': stockcontroller.text,
+                'name': componentcontroller.CompName.value,
+                'boxno': componentcontroller.Boxname.value
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Component added successfully'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+
+              Navigator.pop(context);
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error adding component: $e'),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
           },
           child: Container(
             width: 300,

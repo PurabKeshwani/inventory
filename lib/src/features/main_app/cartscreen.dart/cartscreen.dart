@@ -27,6 +27,7 @@ class _CartscreenState extends State<Cartscreen> {
   TextEditingController Name = TextEditingController();
   final TextEditingController PhoneNumber = TextEditingController();
   final TextEditingController Class = TextEditingController();
+  bool _isLoading = false;
 
   final ComponentController componentcontroller =
       Get.put(ComponentController());
@@ -496,55 +497,71 @@ class _CartscreenState extends State<Cartscreen> {
                       height: 10,
                     ),
                     TextButton(
-                      onPressed: () async {
-                        if (componentcontroller.returnorissue.value == false) {
-                          await insertCartComponents(
-                              Memberid.text,
-                              Name.text,
-                              Class.text,
-                              PhoneNumber.text,
-                              componentcontroller.Cartcomponents);
+                      onPressed: _isLoading
+                          ? null
+                          : () async {
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              try {
+                                if (componentcontroller.returnorissue.value ==
+                                    false) {
+                                  await insertCartComponents(
+                                      Memberid.text,
+                                      Name.text,
+                                      Class.text,
+                                      PhoneNumber.text,
+                                      componentcontroller.Cartcomponents);
 
-                          for (var item in componentcontroller.Cartcomponents) {
-                            await updateQuantity(item);
-                          }
-                        } else {
-                          for (var item in componentcontroller.Cartcomponents) {
-                            await returnQuantity(item);
-                          }
-                        }
-                        DateTime issueDate =
-                            DateTime.now(); // Example issue date
-                        DateTime scheduledDate =
-                            issueDate.add(const Duration(days: 14));
+                                  for (var item
+                                      in componentcontroller.Cartcomponents) {
+                                    await updateQuantity(item);
+                                  }
+                                } else {
+                                  for (var item
+                                      in componentcontroller.Cartcomponents) {
+                                    await returnQuantity(item);
+                                  }
+                                }
+                                DateTime issueDate = DateTime.now();
+                                DateTime scheduledDate =
+                                    issueDate.add(const Duration(days: 14));
 
-                        String scheduledDateString =
-                            DateFormat('yyyy-MM-dd HH:mm:ss')
-                                .format(scheduledDate);
-                        scheduleNotification(scheduledDate);
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => Thankyou()));
-                      },
+                                String scheduledDateString =
+                                    DateFormat('yyyy-MM-dd HH:mm:ss')
+                                        .format(scheduledDate);
+                                scheduleNotification(scheduledDate);
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => Thankyou()));
+                              } catch (e) {
+                                print('Error during checkout: $e');
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+                            },
                       child: Container(
                         width: 300,
-                        decoration: const BoxDecoration(
-                          color: Color(0xff19335A),
+                        decoration: BoxDecoration(
+                          color: _isLoading ? Colors.grey : Color(0xff19335A),
                           borderRadius: BorderRadius.all(Radius.circular(8)),
                         ),
                         padding: EdgeInsets.symmetric(vertical: 12),
                         alignment: Alignment.center,
-                        child: Text(
-                          'Checkout',
-                          style: GoogleFonts.lato(
-                            textStyle: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ),
+                        child: _isLoading
+                            ? CircularProgressIndicator(color: Colors.white)
+                            : Text(
+                                'Checkout',
+                                style: GoogleFonts.lato(
+                                  textStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
                       ),
                     )
                   ],
