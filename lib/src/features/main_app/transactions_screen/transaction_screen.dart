@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
-import 'package:inventory/src/features/main_app/cartscreen.dart/cartscreen.dart';
+import 'package:inventory/src/features/main_app/cartscreen/cartscreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -162,11 +162,25 @@ class _TransactionScreenState extends State<TransactionScreen> {
         }
 
         if (mounted) {
+          // Check if component with same SKUID already exists
+          bool componentExists = componentcontroller.Cartcomponents.any(
+              (component) => component.skuid == barcode);
+
+          if (componentExists) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Component already added to cart'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            return;
+          }
+
           setState(() {
             final newComponent = Cartcomponent(
               compname: componentcontroller.CompName.value,
               skuid: barcode,
-              Quantity: componentcontroller.Quantity.value,
+              Quantity: 1,
             );
             componentcontroller.Cartcomponents.add(newComponent);
             print(
@@ -526,47 +540,13 @@ class _TransactionScreenState extends State<TransactionScreen> {
                               const SizedBox(height: 10),
                             ],
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 10, left: 10),
-                                child: Text(
-                                  component.compname,
-                                  style: GoogleFonts.lato(
-                                      color: Colors.black, fontSize: 15),
-                                ),
-                              ),
-                              SizedBox(width: 20),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        component.Quantity =
-                                            component.Quantity - 1;
-                                      });
-                                    },
-                                    icon: Icon(Icons.remove),
-                                  ),
-                                  Text(
-                                    component.Quantity.toString(),
-                                    style: GoogleFonts.lato(
-                                        color: Colors.black, fontSize: 20),
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        component.Quantity =
-                                            component.Quantity + 1;
-                                      });
-                                    },
-                                    icon: Icon(Icons.add),
-                                  ),
-                                ],
-                              ),
-                            ],
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10, left: 10),
+                            child: Text(
+                              component.compname,
+                              style: GoogleFonts.lato(
+                                  color: Colors.black, fontSize: 15),
+                            ),
                           ),
                         ],
                       ),

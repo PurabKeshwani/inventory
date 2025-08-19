@@ -5,6 +5,8 @@ import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:get/state_manager.dart';
 import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/data/model.dart';
+import 'package:inventory/src/data/microControllerList.dart';
+import 'package:inventory/src/data/powercomponents.dart';
 
 class ComponentController extends GetxController {
   RxString Skuid = ''.obs;
@@ -22,6 +24,26 @@ class ComponentController extends GetxController {
   RxString title = ''.obs;
   RxString transactionid = ''.obs;
 
+  // Database service for microcontrollers
+  final Microcontrollers _microcontrollers = Microcontrollers();
+
+  // Database service for power components
+  final Powercomponents _powercomponents = Powercomponents();
+
+  // Cache for microcontroller data
+  List<Component> _microcontrollerCache = [];
+  bool _cacheLoaded = false;
+
+  // Cache for power component data
+  List<Component> _powercomponentCache = [];
+  bool _powerCacheLoaded = false;
+
+  // Loading states
+  RxBool isLoadingMicrocontrollers = false.obs;
+  RxString microcontrollerError = ''.obs;
+  RxBool isLoadingPowerComponents = false.obs;
+  RxString powerComponentError = ''.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -31,10 +53,340 @@ class ComponentController extends GetxController {
     ever(Boxname, (_) {
       boxnocontroller.text = Boxname.value;
     });
+
+    // Listen to text controller changes and update the observables
+    namecontroller.addListener(() {
+      if (namecontroller.text != CompName.value) {
+        CompName.value = namecontroller.text;
+      }
+    });
+
+    boxnocontroller.addListener(() {
+      if (boxnocontroller.text != Boxname.value) {
+        Boxname.value = boxnocontroller.text;
+      }
+    });
+
+    // Load microcontroller data on initialization
+    _loadMicrocontrollerData();
+
+    // Load power component data on initialization
+    _loadPowerComponentData();
+  }
+
+  // Load microcontroller data from database
+  Future<void> _loadMicrocontrollerData() async {
+    if (_cacheLoaded) return;
+
+    try {
+      isLoadingMicrocontrollers.value = true;
+      microcontrollerError.value = '';
+
+      _microcontrollerCache = await _microcontrollers.getComponents();
+      _cacheLoaded = true;
+      print(
+          'Loaded ${_microcontrollerCache.length} microcontrollers from database');
+    } catch (error) {
+      print('Error loading microcontroller data: $error');
+      microcontrollerError.value =
+          'Failed to load microcontroller data: $error';
+      _microcontrollerCache = [];
+    } finally {
+      isLoadingMicrocontrollers.value = false;
+    }
+  }
+
+  // Load power component data from database
+  Future<void> _loadPowerComponentData() async {
+    if (_powerCacheLoaded) return;
+
+    try {
+      isLoadingPowerComponents.value = true;
+      powerComponentError.value = '';
+
+      _powercomponentCache = await _powercomponents.getComponents();
+      _powerCacheLoaded = true;
+      print(
+          'Loaded ${_powercomponentCache.length} power components from database');
+    } catch (error) {
+      print('Error loading power component data: $error');
+      powerComponentError.value = 'Failed to load power component data: $error';
+      _powercomponentCache = [];
+    } finally {
+      isLoadingPowerComponents.value = false;
+    }
+  }
+
+  void clearComponents() {
+    Classcomponents.clear();
+    print('ComponentController: All components cleared');
   }
 
   void addComponent(Component component) {
-    Classcomponents.add(component);
+    // Check if component already exists based on skuId or name
+    bool exists = Classcomponents.any((existingComponent) {
+      // First try to match by skuId if both have it
+      if (existingComponent.skuId != null && component.skuId != null) {
+        return existingComponent.skuId!.trim() == component.skuId!.trim();
+      }
+      // Otherwise match by name (case-insensitive)
+      return existingComponent.name.trim().toLowerCase() ==
+          component.name.trim().toLowerCase();
+    });
+
+    if (!exists) {
+      Classcomponents.add(component);
+      print(
+          'Added component: ${component.name} (${component.skuId}) - Stock: ${component.stock} - Total: ${Classcomponents.length}');
+    } else {
+      print(
+          'Skipped duplicate component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
+    }
+  }
+
+  // Add method to set components directly (replacing all existing ones)
+  void setComponents(List<Component> components) {
+    Classcomponents.clear();
+
+    // Remove duplicates from the input list first
+    final uniqueComponents = <Component>[];
+    final seen = <String>{};
+
+    for (final component in components) {
+      // Use skuId as primary identifier, fall back to name
+      final identifier =
+          component.skuId?.trim() ?? component.name.trim().toLowerCase();
+
+      if (!seen.contains(identifier)) {
+        seen.add(identifier);
+        uniqueComponents.add(component);
+        print(
+            'Adding unique component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
+      } else {
+        print(
+            'Removing duplicate from input: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
+      }
+    }
+
+    Classcomponents.addAll(uniqueComponents);
+    print(
+        'Set ${uniqueComponents.length} unique components. Total in controller: ${Classcomponents.length}');
+  }
+
+  // Find microcontroller data from database using pattern matching
+  Component? _findMicrocontrollerBySkuId(String skuId) {
+    print('Looking for microcontroller with SKU: $skuId');
+
+    try {
+      // First try exact match
+      final exactMatch = _microcontrollerCache.firstWhere(
+        (component) =>
+            component.skuId?.trim().toLowerCase() == skuId.trim().toLowerCase(),
+        orElse: () => throw Exception('Not found'),
+      );
+      print('Exact match found: ${exactMatch.name} (${exactMatch.skuId})');
+      return exactMatch;
+    } catch (e) {
+      print('No exact match found, trying pattern matching...');
+      // If exact match fails, try pattern matching
+      final patternMatch = _findMicrocontrollerByPattern(skuId);
+      if (patternMatch != null) {
+        print(
+            'Pattern match successful: ${patternMatch.name} (${patternMatch.skuId})');
+      } else {
+        print('No pattern match found for: $skuId');
+      }
+      return patternMatch;
+    }
+  }
+
+  // Find power component data from database using pattern matching
+  Component? _findPowerComponentBySkuId(String skuId) {
+    print('Looking for power component with SKU: $skuId');
+
+    try {
+      // First try exact match
+      final exactMatch = _powercomponentCache.firstWhere(
+        (component) =>
+            component.skuId?.trim().toLowerCase() == skuId.trim().toLowerCase(),
+        orElse: () => throw Exception('Not found'),
+      );
+      print('Exact match found: ${exactMatch.name} (${exactMatch.skuId})');
+      return exactMatch;
+    } catch (e) {
+      print('No exact match found, trying pattern matching...');
+      // If exact match fails, try pattern matching
+      final patternMatch = _findPowerComponentByPattern(skuId);
+      if (patternMatch != null) {
+        print(
+            'Pattern match successful: ${patternMatch.name} (${patternMatch.skuId})');
+      } else {
+        print('No pattern match found for: $skuId');
+      }
+      return patternMatch;
+    }
+  }
+
+  // Find microcontroller by pattern matching (e.g., MC-ARD-UNO-016 matches MC-ARD-UNO-015)
+  Component? _findMicrocontrollerByPattern(String skuId) {
+    try {
+      final inputSkuLower = skuId.trim().toLowerCase();
+      print('Pattern matching for input: $inputSkuLower');
+      print('Cache has ${_microcontrollerCache.length} components');
+
+      // Extract base pattern from input (remove trailing numbers)
+      // MC-ARD-UNO-016 -> MC-ARD-UNO
+      final inputBase = inputSkuLower.replaceAll(RegExp(r'-\d+$'), '');
+      print('Input base pattern: $inputBase');
+
+      Component? bestMatch;
+
+      for (final component in _microcontrollerCache) {
+        final dbSkuLower = component.skuId?.trim().toLowerCase();
+        if (dbSkuLower == null) continue;
+
+        print('Checking database SKU: $dbSkuLower');
+
+        // Extract base pattern from database SKU
+        // MC-ARD-UNO-015 -> MC-ARD-UNO
+        final dbBase = dbSkuLower.replaceAll(RegExp(r'-\d+$'), '');
+        print('Database base pattern: $dbBase');
+
+        // Check if base patterns match
+        if (inputBase == dbBase && inputBase.isNotEmpty) {
+          bestMatch = component;
+          print(
+              '✅ Pattern match found: $inputSkuLower -> $dbSkuLower (base: $inputBase)');
+          break;
+        }
+
+        // Also check if database SKU is a prefix of input SKU (for cases without numbers)
+        if (inputSkuLower.startsWith(dbSkuLower + '-')) {
+          bestMatch = component;
+          print('✅ Prefix match found: $inputSkuLower -> $dbSkuLower');
+          break;
+        }
+
+        // Additional check: if input starts with database base pattern
+        if (inputSkuLower.startsWith(dbBase + '-') && dbBase.isNotEmpty) {
+          bestMatch = component;
+          print(
+              '✅ Base prefix match found: $inputSkuLower -> $dbSkuLower (base: $dbBase)');
+          break;
+        }
+      }
+
+      if (bestMatch == null) {
+        print('❌ No pattern match found for: $skuId');
+        // Debug: Print all available SKUs for troubleshooting
+        print('Available SKUs in cache:');
+        for (final component in _microcontrollerCache) {
+          print('  - ${component.skuId} (${component.name})');
+        }
+      }
+
+      return bestMatch;
+    } catch (e) {
+      print('Error in pattern matching: $e');
+      return null;
+    }
+  }
+
+  // Find power component by pattern matching (e.g., PW-VOLT-REG-016 matches PW-VOLT-REG-015)
+  Component? _findPowerComponentByPattern(String skuId) {
+    try {
+      final inputSkuLower = skuId.trim().toLowerCase();
+      print('Pattern matching for power component input: $inputSkuLower');
+      print('Power cache has ${_powercomponentCache.length} components');
+
+      // Extract base pattern from input (remove trailing numbers)
+      // PW-VOLT-REG-016 -> PW-VOLT-REG
+      final inputBase = inputSkuLower.replaceAll(RegExp(r'-\d+$'), '');
+      print('Input base pattern: $inputBase');
+
+      Component? bestMatch;
+
+      for (final component in _powercomponentCache) {
+        final dbSkuLower = component.skuId?.trim().toLowerCase();
+        if (dbSkuLower == null) continue;
+
+        print('Checking database SKU: $dbSkuLower');
+
+        // Extract base pattern from database SKU
+        // PW-VOLT-REG-015 -> PW-VOLT-REG
+        final dbBase = dbSkuLower.replaceAll(RegExp(r'-\d+$'), '');
+        print('Database base pattern: $dbBase');
+
+        // Check if base patterns match
+        if (inputBase == dbBase && inputBase.isNotEmpty) {
+          bestMatch = component;
+          print(
+              '✅ Pattern match found: $inputSkuLower -> $dbSkuLower (base: $inputBase)');
+          break;
+        }
+
+        // Also check if database SKU is a prefix of input SKU (for cases without numbers)
+        if (inputSkuLower.startsWith(dbSkuLower + '-')) {
+          bestMatch = component;
+          print('✅ Prefix match found: $inputSkuLower -> $dbSkuLower');
+          break;
+        }
+
+        // Additional check: if input starts with database base pattern
+        if (inputSkuLower.startsWith(dbBase + '-') && dbBase.isNotEmpty) {
+          bestMatch = component;
+          print(
+              '✅ Base prefix match found: $inputSkuLower -> $dbSkuLower (base: $dbBase)');
+          break;
+        }
+      }
+
+      if (bestMatch == null) {
+        print('❌ No pattern match found for power component: $skuId');
+        // Debug: Print all available SKUs for troubleshooting
+        print('Available power component SKUs in cache:');
+        for (final component in _powercomponentCache) {
+          print('  - ${component.skuId} (${component.name})');
+        }
+      }
+
+      return bestMatch;
+    } catch (e) {
+      print('Error in power component pattern matching: $e');
+      return null;
+    }
+  }
+
+  // Async version of skuidanalyze that ensures data is loaded
+  Future<void> skuidanalyzeAsync(String elem) async {
+    print('=== STARTING ASYNC SKU ANALYSIS ===');
+    print('Input SKU: $elem');
+
+    // Ensure microcontroller data is loaded
+    if (!_cacheLoaded) {
+      print('Cache not loaded, loading microcontroller data...');
+      await _loadMicrocontrollerData();
+    } else {
+      print(
+          'Cache already loaded with ${_microcontrollerCache.length} components');
+    }
+
+    // Ensure power component data is loaded
+    if (!_powerCacheLoaded) {
+      print('Power cache not loaded, loading power component data...');
+      await _loadPowerComponentData();
+    } else {
+      print(
+          'Power cache already loaded with ${_powercomponentCache.length} components');
+    }
+
+    // Debug: Print cache contents for troubleshooting
+    debugPrintCache();
+
+    // Now call the regular analyze method
+    skuidanalyze(elem);
+
+    print('=== FINISHED ASYNC SKU ANALYSIS ===');
   }
 
   void skuidanalyze(String elem) {
@@ -43,112 +395,22 @@ class ComponentController extends GetxController {
       ClassName.value = 'Microcontroller';
       print('ClassName set to: ${ClassName.value}');
 
-      if (RegExp(r'RASP-3B').hasMatch(elem)) {
-        CompName.value = 'Raspberry Pie 3b';
-        Boxname.value = 'MC-03';
-      } else if (RegExp(r'RASP-4B').hasMatch(elem)) {
-        CompName.value = 'Raspberry Pie 4b';
-        Boxname.value = 'MC-03';
-      } else if (RegExp(r'RASPI-0').hasMatch(elem)) {
-        CompName.value = 'Raspberry pie zero';
-        Boxname.value = 'MC-03';
-      } else if (RegExp(r'RASP-PICO').hasMatch(elem)) {
-        CompName.value = 'Raspberry pie pico';
-        Boxname.value = 'MC-03';
-      } else if (RegExp(r'RASPI-CAM').hasMatch(elem)) {
-        CompName.value = 'Raspberry CAM';
-        Boxname.value = 'MC-04';
-      } else if (RegExp(r'ESP32-DEV').hasMatch(elem)) {
-        CompName.value = 'ESP32 dev kit';
-        Boxname.value = 'MC-05/MC-02';
-      } else if (RegExp(r'ESP32').hasMatch(elem)) {
-        CompName.value = 'ESP 32';
-        Boxname.value = 'MC-04';
-      } else if (RegExp(r'ESP-NMCU').hasMatch(elem)) {
-        CompName.value = 'ESP8266 (NODEMCU)';
-        Boxname.value = 'MC-02';
-      } else if (RegExp(r'ESP-CAM').hasMatch(elem)) {
-        CompName.value = 'ESP CAMERA';
-        Boxname.value = 'MC-02';
-      } else if (RegExp(r'STM-32').hasMatch(elem)) {
-        CompName.value = 'STM-32F401';
-        Boxname.value = 'MC-04';
-      } else if (RegExp(r'ARD-UNO').hasMatch(elem)) {
-        CompName.value = 'ARDUINO UNO';
-        Boxname.value = 'MC-01';
-      } else if (RegExp(r'IOS').hasMatch(elem)) {
-        CompName.value = 'IO Shield';
-        Boxname.value = 'MC-05';
-      } else if (RegExp(r'ARD-NANO').hasMatch(elem)) {
-        CompName.value = 'Arduino Nano';
-        Boxname.value = 'MC-01';
-        // } else if (RegExp(r'AT-MEGA32').hasMatch(elem)) {
-        //   CompName.value = 'ATMEGA32';
-        //   Boxname.value = 'MC-01';
-        // } else if (RegExp(r'AT-MEGA8').hasMatch(elem)) {
-        //   CompName.value = 'ATMEGA8-16PU';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'PIC18F14K50').hasMatch(elem)) {
-        //   CompName.value = 'PIC18F14K50';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'PIC18F4520').hasMatch(elem)) {
-        //   CompName.value = 'PIC18F(4520)';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'PIC18F4550').hasMatch(elem)) {
-        //   CompName.value = 'PIC18F(4550)';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'PIC16F877A').hasMatch(elem)) {
-        //   CompName.value = 'PIC16F877A AND DS13020538A5';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'89E516-RD').hasMatch(elem)) {
-        //   CompName.value = '89E516RD';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'ATMEG-16').hasMatch(elem)) {
-        //   CompName.value = 'ATMEGA16L8PU';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'ATMEL-73424').hasMatch(elem)) {
-        //   CompName.value = 'ATMEL73424C256';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'ATMEL-U7482EB').hasMatch(elem)) {
-        //   CompName.value = 'ATMELU7482EB';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'PIC18F 252').hasMatch(elem)) {
-        //   CompName.value = 'PIC18F252';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'PIC18F 13K50').hasMatch(elem)) {
-        //   CompName.value = 'PIC18F13K50';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'PIC18F 887A').hasMatch(elem)) {
-        //   CompName.value = 'PIC16F887A';
-        //   Boxname.value = 'MC-03';
-        // } else if (RegExp(r'ARD-ENC').hasMatch(elem)) {
-        //   CompName.value = 'Arduino ENC28J60 (Ethernet)';
-        //   Boxname.value = 'CM-03';
-      } else if (RegExp(r'ARD-PMINI').hasMatch(elem)) {
-        CompName.value = 'arduino pro mini';
-        Boxname.value = 'MC-01';
-      } else if (RegExp(r'ARD-MEGA').hasMatch(elem)) {
-        CompName.value = 'Arduino mega';
-        Boxname.value = 'MC-01';
-      } else if (RegExp(r'STMST-LINK').hasMatch(elem)) {
-        CompName.value = 'ST-LINK V2';
-        Boxname.value = 'MC-04';
-      } else if (RegExp(r'4K-FPGA').hasMatch(elem)) {
-        CompName.value = '4K FPGA';
-        Boxname.value = 'MC-04';
-      } else if (RegExp(r'PIC-MC').hasMatch(elem)) {
-        CompName.value = 'PIC Microcontroller';
-        Boxname.value = 'MC-03';
-      } else if (RegExp(r'8051-kit').hasMatch(elem)) {
-        CompName.value = '8051 Microcontroller';
-        Boxname.value = 'MC-05';
-      } else if (RegExp(r'GPIO-EXT').hasMatch(elem)) {
-        CompName.value = 'GPIO Extention';
-        Boxname.value = 'MC-03';
-      } else if (RegExp(r'MPPT-SOLAR').hasMatch(elem)) {
-        CompName.value = 'MPPT Solar Charge Controller';
-        Boxname.value = 'MC-03';
+      // Try to find the component in the database using pattern matching
+      final dbComponent = _findMicrocontrollerBySkuId(elem);
+      if (dbComponent != null) {
+        CompName.value = dbComponent.name;
+        Boxname.value = dbComponent.boxNo;
+        Quantity.value = dbComponent.stock;
+        print(
+            'Found in database: ${dbComponent.name} - Box: ${dbComponent.boxNo} - Stock: ${dbComponent.stock}');
+        return;
       }
+
+      // If not found in database, set default values
+      print('Not found in database: $elem');
+      CompName.value = 'Unknown Microcontroller';
+      Boxname.value = 'MC-00';
+      Quantity.value = 0;
     } else if (RegExp(r'^SN').hasMatch(elem)) {
       ClassName.value = 'Sensors';
       if (RegExp(r'SN-SHARP-IR').hasMatch(elem)) {
@@ -687,6 +949,21 @@ class ComponentController extends GetxController {
       }
     } else if (RegExp(r'^PW').hasMatch(elem)) {
       ClassName.value = 'Power Components';
+      print('ClassName set to: ${ClassName.value}');
+
+      // Try to find the component in the database using pattern matching
+      final dbComponent = _findPowerComponentBySkuId(elem);
+      if (dbComponent != null) {
+        CompName.value = dbComponent.name;
+        Boxname.value = dbComponent.boxNo;
+        Quantity.value = dbComponent.stock;
+        print(
+            'Found in database: ${dbComponent.name} - Box: ${dbComponent.boxNo} - Stock: ${dbComponent.stock}');
+        return;
+      }
+
+      // If not found in database, fall back to hardcoded values
+      print('Not found in database, using hardcoded values for: $elem');
       if (RegExp(r'PW-VOLT-REG').hasMatch(elem)) {
         CompName.value = 'Voltage regulator (LM7812C)';
         Boxname.value = 'PW-01';
@@ -711,6 +988,11 @@ class ComponentController extends GetxController {
       } else if (RegExp(r'PW-DRIVER').hasMatch(elem)) {
         CompName.value = 'PWM Motor Driver';
         Boxname.value = 'PW-01';
+      } else {
+        // If no specific pattern matches, set default values
+        CompName.value = 'Unknown Power Component';
+        Boxname.value = 'PW-00';
+        Quantity.value = 0;
       }
     }
   }
@@ -719,8 +1001,68 @@ class ComponentController extends GetxController {
     Skuid.value = '';
     CompName.value = '';
     Boxname.value = '';
+    Quantity.value = 1;
     namecontroller.clear();
     boxnocontroller.clear();
+  }
+
+  // Method to refresh microcontroller data from database
+  Future<void> refreshMicrocontrollerData() async {
+    _cacheLoaded = false;
+    _microcontrollerCache.clear();
+    await _loadMicrocontrollerData();
+  }
+
+  // Method to refresh power component data from database
+  Future<void> refreshPowerComponentData() async {
+    _powerCacheLoaded = false;
+    _powercomponentCache.clear();
+    await _loadPowerComponentData();
+  }
+
+  // Debug method to print cache contents
+  void debugPrintCache() {
+    print('=== MICROCONTROLLER CACHE DEBUG ===');
+    print('Cache loaded: $_cacheLoaded');
+    print('Cache size: ${_microcontrollerCache.length}');
+    print('Cache contents:');
+    for (int i = 0; i < _microcontrollerCache.length; i++) {
+      final component = _microcontrollerCache[i];
+      print(
+          '  [$i] SKU: "${component.skuId}" | Name: "${component.name}" | Stock: ${component.stock}');
+    }
+    print('=== END MICROCONTROLLER CACHE DEBUG ===');
+
+    print('=== POWER COMPONENT CACHE DEBUG ===');
+    print('Power cache loaded: $_powerCacheLoaded');
+    print('Power cache size: ${_powercomponentCache.length}');
+    print('Power cache contents:');
+    for (int i = 0; i < _powercomponentCache.length; i++) {
+      final component = _powercomponentCache[i];
+      print(
+          '  [$i] SKU: "${component.skuId}" | Name: "${component.name}" | Stock: ${component.stock}');
+    }
+    print('=== END POWER COMPONENT CACHE DEBUG ===');
+  }
+
+  // Method to get microcontroller by SKU ID (for external use)
+  Component? getMicrocontrollerBySkuId(String skuId) {
+    return _findMicrocontrollerBySkuId(skuId);
+  }
+
+  // Method to get power component by SKU ID (for external use)
+  Component? getPowerComponentBySkuId(String skuId) {
+    return _findPowerComponentBySkuId(skuId);
+  }
+
+  // Method to get all cached microcontrollers
+  List<Component> getAllMicrocontrollers() {
+    return List.from(_microcontrollerCache);
+  }
+
+  // Method to get all cached power components
+  List<Component> getAllPowerComponents() {
+    return List.from(_powercomponentCache);
   }
 
   // Method to check if stock is available
@@ -728,7 +1070,64 @@ class ComponentController extends GetxController {
     return Quantity.value > 0;
   }
 
-  // void QuantityAnalyzer(){
+  // Test method to verify pattern matching works for both microcontrollers and power components
+  Future<void> testPatternMatching() async {
+    print('=== TESTING PATTERN MATCHING ===');
 
-  // }
+    // Ensure caches are loaded
+    if (!_cacheLoaded) {
+      await _loadMicrocontrollerData();
+    }
+    if (!_powerCacheLoaded) {
+      await _loadPowerComponentData();
+    }
+
+    // Test cases for microcontrollers
+    final mcTestCases = [
+      'MC-ARD-UNO-015', // Should find exact match
+      'MC-ARD-UNO-016', // Should find pattern match with 015
+      'MC-ARD-UNO-020', // Should find pattern match with 015
+      'MC-UNKNOWN-001', // Should not find any match
+    ];
+
+    print('\n--- Testing Microcontrollers ---');
+    for (final testCase in mcTestCases) {
+      print('\n--- Testing: $testCase ---');
+      final result = _findMicrocontrollerBySkuId(testCase);
+      if (result != null) {
+        print(
+            '✅ Found: ${result.name} (${result.skuId}) - Stock: ${result.stock}');
+      } else {
+        print('❌ Not found');
+      }
+    }
+
+    // Test cases for power components
+    final pwTestCases = [
+      'PW-VOLT-REG-001', // Should find pattern match
+      'PW-SOLAR-005', // Should find pattern match
+      'PW-UNKNOWN-001', // Should not find any match
+    ];
+
+    print('\n--- Testing Power Components ---');
+    for (final testCase in pwTestCases) {
+      print('\n--- Testing: $testCase ---');
+      final result = _findPowerComponentBySkuId(testCase);
+      if (result != null) {
+        print(
+            '✅ Found: ${result.name} (${result.skuId}) - Stock: ${result.stock}');
+      } else {
+        print('❌ Not found');
+      }
+    }
+
+    print('=== END PATTERN MATCHING TEST ===');
+  }
+
+  @override
+  void onClose() {
+    namecontroller.dispose();
+    boxnocontroller.dispose();
+    super.onClose();
+  }
 }

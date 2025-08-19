@@ -1,8 +1,0 @@
-import 'package:inventory/src/data_member/model.dart';
-
-class Members {
-  List<Member> members = [
-    Member(id: '001', name: 'John Doe', div: 'A', phone: '123-456-7890'), 
-
-  ];
-}

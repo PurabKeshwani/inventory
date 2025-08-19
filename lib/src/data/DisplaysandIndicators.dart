@@ -1,35 +1,85 @@
 import 'package:inventory/src/data/model.dart';
+import 'package:inventory/src/services/display_indicator_service.dart';
 
 class Displaysandindicators {
-  final List<Component> components = [
-    Component(name: 'Small O-LED', boxNo: '', stock: 1),
-    Component(
-        name: '8 digit 7 segment display',
-        boxNo: '',
-        stock: 0), // Assuming stock is 0 since not provided
-    Component(name: '2 digit 7 segment (red colour)', boxNo: '', stock: 1),
-    Component(name: '1 digit 7 segment display (Big)', boxNo: '', stock: 2),
-    Component(name: '1 digit 7 segment display', boxNo: '', stock: 5),
-    Component(name: '3 digit 7 segment', boxNo: '', stock: 4),
-    Component(
-        name: 'LED matrix',
-        boxNo: '',
-        stock: 0), // Assuming stock is 0 since not provided
-    Component(name: 'RGB LED STRIPS', boxNo: '', stock: 1),
-    Component(name: 'IIC OLED SSD1306', boxNo: '', stock: 1),
-    Component(name: 'I2C MODULE', boxNo: '', stock: 15),
-    Component(name: 'LCD with shield', boxNo: '', stock: 1),
-    Component(name: 'LCD 16X2', boxNo: '', stock: 2),
-    Component(name: 'LCD 20 x 4', boxNo: '', stock: 5),
-    Component(name: 'LCD 3.5 inch', boxNo: '', stock: 5),
-    Component(name: 'RFID TAG', boxNo: '', stock: 5),
-    Component(name: 'RFID CARD', boxNo: '', stock: 5),
-  ];
+  final DisplayIndicatorService _service = DisplayIndicatorService();
 
-  Displaysandindicators() {
-    print("Initializing Displaysandindicators");
-    print("Number of components initialized: ${components.length}");
-    components
-        .forEach((component) => print("Loaded component: ${component.name}"));
+  // Fetch components from Supabase
+  Future<List<Component>> getComponents() async {
+    try {
+      final components = await _service.getAllDisplaysAndIndicators();
+      // Remove duplicates based on name (or you could use skuId if preferred)
+      return _removeDuplicates(components);
+    } catch (error) {
+      // Return empty list if there's an error
+      // You might want to handle this differently based on your app's needs
+      print('Error fetching displays and indicators: $error');
+      return [];
+    }
+  }
+
+  // Helper method to remove duplicate components
+  List<Component> _removeDuplicates(List<Component> components) {
+    final seen = <String>{};
+    final uniqueComponents = <Component>[];
+
+    for (final component in components) {
+      // Use skuId as primary identifier, fall back to name if skuId is null
+      final identifier = component.skuId ?? component.name;
+      if (!seen.contains(identifier)) {
+        seen.add(identifier);
+        uniqueComponents.add(component);
+        print(
+            'Added unique component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
+      } else {
+        print(
+            'Removing duplicate component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
+      }
+    }
+
+    print(
+        'Original count: ${components.length}, After removing duplicates: ${uniqueComponents.length}');
+    return uniqueComponents;
+  }
+
+  // Add a new component
+  Future<Component?> addComponent(Component component) async {
+    try {
+      return await _service.addDisplayIndicator(component);
+    } catch (error) {
+      print('Error adding display or indicator: $error');
+      return null;
+    }
+  }
+
+  // Update an existing component
+  Future<Component?> updateComponent(String skuId, Component component) async {
+    try {
+      return await _service.updateDisplayIndicator(skuId, component);
+    } catch (error) {
+      print('Error updating display or indicator: $error');
+      return null;
+    }
+  }
+
+  // Delete a component
+  Future<bool> deleteComponent(String skuId) async {
+    try {
+      await _service.deleteDisplayIndicator(skuId);
+      return true;
+    } catch (error) {
+      print('Error deleting display or indicator: $error');
+      return false;
+    }
+  }
+
+  // Update stock for a component
+  Future<Component?> updateStock(String skuId, int newStock) async {
+    try {
+      return await _service.updateStock(skuId, newStock);
+    } catch (error) {
+      print('Error updating stock: $error');
+      return null;
+    }
   }
 }

@@ -1,26 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:inventory/src/features/main_app/dashboard/classes_widget.dart';
+import 'package:inventory/src/features/main_app/dashboard/workshop_page.dart';
 
-class Dashboard extends StatelessWidget {
+class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
   @override
+  State<Dashboard> createState() => _DashboardState();
+}
+
+class _DashboardState extends State<Dashboard> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showFab = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels > 0 && !_showFab) {
+      setState(() {
+        _showFab = true;
+      });
+    } else if (_scrollController.position.pixels == 0 && _showFab) {
+      setState(() {
+        _showFab = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Container(
-        child: Column(
+    return Scaffold(
+      floatingActionButton: AnimatedSlide(
+        duration: const Duration(milliseconds: 300),
+        offset: _showFab ? Offset.zero : const Offset(0, 2),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 300),
+          opacity: _showFab ? 1.0 : 0.0,
+          child: FloatingActionButton(
+            backgroundColor: Colors.lightBlue[100],
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => WorkshopPage()));
+            },
+            child: const Icon(Icons.change_circle_outlined),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        controller: _scrollController,
+        child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          // crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClassContainer(label: "Microcontroller", stock: 27),
-            ClassContainer(label: "Communication Modules", stock: 20),
-            ClassContainer(label: "Sensors", stock: 18),
-            ClassContainer(label: "Displays and Indicators", stock: 13),
-            ClassContainer(label: "Audio Modules", stock: 5),
-            ClassContainer(label: "Transistors and Diodes", stock: 8),
-            ClassContainer(label: "Actuators and Motors", stock: 8),
-            ClassContainer(label: "Connectors and Switches", stock: 8),
-            ClassContainer(label: "Power Components", stock: 0)
+            ClassContainer(label: "Microcontroller"),
+            ClassContainer(label: "Communication Modules"),
+            ClassContainer(label: "Sensors"),
+            ClassContainer(label: "Displays and Indicators"),
+            ClassContainer(label: "Actuators and Motors"),
+            ClassContainer(label: "Power Components"),
+            ClassContainer(label: "Others")
           ],
         ),
       ),

@@ -394,7 +394,7 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
                 'skuid': barcodecontroller.text,
                 'stock': stockcontroller.text,
                 'name': componentcontroller.CompName.value,
-                'boxno': componentcontroller.Boxname.value
+                'boxno': componentcontroller.boxnocontroller.text
               });
 
               ScaffoldMessenger.of(context).showSnackBar(

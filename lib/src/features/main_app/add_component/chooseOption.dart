@@ -25,8 +25,8 @@ class Chooseoption extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Padding(
-              padding: const EdgeInsets.only(
-                  top: 15, right: 15, left: 15, bottom: 5),
+              padding:
+                  const EdgeInsets.only(top: 15, right: 5, left: 5, bottom: 5),
               child: InkWell(
                 onTap: () => AddCompBottomSheet(
                     context), // Adjust your function name as needed
@@ -45,9 +45,7 @@ class Chooseoption extends StatelessWidget {
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.only(
-                      right: 10
-                    ),
+                    padding: const EdgeInsets.only(right: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -73,7 +71,7 @@ class Chooseoption extends StatelessWidget {
             ),
             Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+                  const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
               child: InkWell(
                 onTap: () => AddConsumableSheet(
                     context), // Adjust your function name as needed

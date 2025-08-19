@@ -1,35 +1,85 @@
 import 'package:inventory/src/data/model.dart';
+import 'package:inventory/src/services/other_components_service.dart';
 
-class Othermodulesandcomponents{
+class Othermodulesandcomponents {
+  final OtherComponentsService _service = OtherComponentsService();
 
+  // Fetch components from Supabase
+  Future<List<Component>> getComponents() async {
+    try {
+      final components = await _service.getAllOtherComponents();
+      // Remove duplicates based on name (or you could use skuId if preferred)
+      return _removeDuplicates(components);
+    } catch (error) {
+      // Return empty list if there's an error
+      // You might want to handle this differently based on your app's needs
+      print('Error fetching other components: $error');
+      return [];
+    }
+  }
 
+  // Helper method to remove duplicate components
+  List<Component> _removeDuplicates(List<Component> components) {
+    final seen = <String>{};
+    final uniqueComponents = <Component>[];
 
-  List<Component> components = [
-  Component(name: 'Crystal Oscillator', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'micro crystal MS3V-T1R', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Text to speech module', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Loadcell Amplifier', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Reliment', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'PIC 18 Development Board', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Potentiometer', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'IR Transmitter', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'IR Receiver', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Sharp I.R sensor', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'IR sensor PCB', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Joystick', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Laser', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Buzzer module', boxNo: '9', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'IR Module', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'CASTER 62858', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Small Leds ATMEL734', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'SMALL F. I HOLDER', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Screw', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Small LEDS', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Camera', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'Pushbutton PCB', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'bulb', boxNo: '', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'usb dev board (small)', boxNo: '3', stock: 0), // Assuming stock is 0 since not provided
-  Component(name: 'usb dev board (large)', boxNo: '2', stock: 0), // Assuming stock is 0 since not provided
-];
+    for (final component in components) {
+      // Use skuId as primary identifier, fall back to name if skuId is null
+      final identifier = component.skuId ?? component.name;
+      if (!seen.contains(identifier)) {
+        seen.add(identifier);
+        uniqueComponents.add(component);
+        print(
+            'Added unique component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
+      } else {
+        print(
+            'Removing duplicate component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
+      }
+    }
 
+    print(
+        'Original count: ${components.length}, After removing duplicates: ${uniqueComponents.length}');
+    return uniqueComponents;
+  }
+
+  // Add a new component
+  Future<Component?> addComponent(Component component) async {
+    try {
+      return await _service.addOtherComponent(component);
+    } catch (error) {
+      print('Error adding other component: $error');
+      return null;
+    }
+  }
+
+  // Update an existing component
+  Future<Component?> updateComponent(String skuId, Component component) async {
+    try {
+      return await _service.updateOtherComponent(skuId, component);
+    } catch (error) {
+      print('Error updating other component: $error');
+      return null;
+    }
+  }
+
+  // Delete a component
+  Future<bool> deleteComponent(String skuId) async {
+    try {
+      await _service.deleteOtherComponent(skuId);
+      return true;
+    } catch (error) {
+      print('Error deleting other component: $error');
+      return false;
+    }
+  }
+
+  // Update stock for a component
+  Future<Component?> updateStock(String skuId, int newStock) async {
+    try {
+      return await _service.updateStock(skuId, newStock);
+    } catch (error) {
+      print('Error updating stock: $error');
+      return null;
+    }
+  }
 }

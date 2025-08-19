@@ -1,27 +1,85 @@
 import 'package:inventory/src/data/model.dart';
+import 'package:inventory/src/services/communication_module_service.dart';
 
 class CommunicationModules {
-  List<Component> components = [
-    Component(name: 'AUBTM 20 Bluetooth module', boxNo: '', stock: 1),
-    Component(name: 'Ethernet Module', boxNo: 'CM-03', stock: 3),
-    Component(name: 'TTL TO RS485', boxNo: '', stock: 1),
-    Component(name: 'SIM 800A/900A GSM MODULE', boxNo: 'CM-01', stock: 2),
-    Component(name: 'Xbee pro', boxNo: 'CM-02', stock: 2),
-    Component(name: 'NRF 24201 (with antenna)', boxNo: 'CM-02', stock: 2),
-    Component(
-        name: 'Arduino port to UART(SYLABS CP2102)', boxNo: 'CM-02', stock: 2),
-    Component(name: 'R315A Transmitter-Receiver module', boxNo: '', stock: 7),
-    Component(name: 'esp 32 wifi module', boxNo: '', stock: 1),
-    Component(name: 'ZIGBEE usb', boxNo: 'CM-02', stock: 1),
-    Component(name: 'reader module(EM-18)', boxNo: 'CM-04', stock: 1),
-    Component(name: 'GPS Module (gy-neo6mv2)', boxNo: 'CM-01', stock: 1),
-    Component(name: 'NRF24 L01 without antenna', boxNo: 'CM-02', stock: 10),
-    Component(name: 'GPS Antenna', boxNo: 'CM-01', stock: 2),
-    Component(name: 'zigbee mesh (N26000)', boxNo: '', stock: 1),
-    Component(name: 'NRF 24LD1 (Without Antenna)', boxNo: 'CM-02', stock: 1),
-    Component(name: 'ESp 01 wifi module', boxNo: '', stock: 3),
-    Component(name: 'RFID module', boxNo: '', stock: 3),
-    Component(name: 'XBEE EXPLORER USB', boxNo: 'CM-02', stock: 1),
-    Component(name: 'GPS Module', boxNo: 'CM-02', stock: 1),
-  ];
+  final CommunicationModuleService _service = CommunicationModuleService();
+
+  // Fetch components from Supabase
+  Future<List<Component>> getComponents() async {
+    try {
+      final components = await _service.getAllCommunicationModules();
+      // Remove duplicates based on name (or you could use skuId if preferred)
+      return _removeDuplicates(components);
+    } catch (error) {
+      // Return empty list if there's an error
+      // You might want to handle this differently based on your app's needs
+      print('Error fetching communication modules: $error');
+      return [];
+    }
+  }
+
+  // Helper method to remove duplicate components
+  List<Component> _removeDuplicates(List<Component> components) {
+    final seen = <String>{};
+    final uniqueComponents = <Component>[];
+
+    for (final component in components) {
+      // Use skuId as primary identifier, fall back to name if skuId is null
+      final identifier = component.skuId ?? component.name;
+      if (!seen.contains(identifier)) {
+        seen.add(identifier);
+        uniqueComponents.add(component);
+        print(
+            'Added unique component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
+      } else {
+        print(
+            'Removing duplicate component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
+      }
+    }
+
+    print(
+        'Original count: ${components.length}, After removing duplicates: ${uniqueComponents.length}');
+    return uniqueComponents;
+  }
+
+  // Add a new component
+  Future<Component?> addComponent(Component component) async {
+    try {
+      return await _service.addCommunicationModule(component);
+    } catch (error) {
+      print('Error adding communication module: $error');
+      return null;
+    }
+  }
+
+  // Update an existing component
+  Future<Component?> updateComponent(String skuId, Component component) async {
+    try {
+      return await _service.updateCommunicationModule(skuId, component);
+    } catch (error) {
+      print('Error updating communication module: $error');
+      return null;
+    }
+  }
+
+  // Delete a component
+  Future<bool> deleteComponent(String skuId) async {
+    try {
+      await _service.deleteCommunicationModule(skuId);
+      return true;
+    } catch (error) {
+      print('Error deleting communication module: $error');
+      return false;
+    }
+  }
+
+  // Update stock for a component
+  Future<Component?> updateStock(String skuId, int newStock) async {
+    try {
+      return await _service.updateStock(skuId, newStock);
+    } catch (error) {
+      print('Error updating stock: $error');
+      return null;
+    }
+  }
 }

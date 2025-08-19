@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:inventory/src/data/Actuators&Motors.dart';
 import 'package:inventory/src/data/Communication%20Modules.dart';
 import 'package:inventory/src/data/DisplaysandIndicators.dart';
-import 'package:inventory/src/data/audiomodules.dart';
+
 import 'package:inventory/src/data/microControllerList.dart';
 import 'package:inventory/src/data/model.dart';
 import 'package:inventory/src/data/sensors.dart';
@@ -20,7 +20,7 @@ class Componentcontroller extends GetxController {
   }
 
   void addComponent(Component component) {
-    // components.add(component);
+    components.add(component);
     foundComponents.add(component);
   }
 
@@ -45,25 +45,55 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final Componentcontroller controller = Get.put(Componentcontroller());
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     controller.components.clear();
-    List<Component> componentList = getAllComponents();
+    _loadAllComponents();
+  }
+
+  Future<void> _loadAllComponents() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    // Clear existing components
+    controller.components.clear();
+    controller.foundComponents.clear();
+    print(
+        "Cleared existing components in search. Current count: ${controller.components.length}");
+
+    List<Component> componentList = await getAllComponents();
+    print("Total components fetched for search: ${componentList.length}");
+
     for (Component elem in componentList) {
       controller.addComponent(elem);
     }
+
+    print(
+        "Final component count in search controller: ${controller.components.length}");
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
-  List<Component> getAllComponents() {
+  Future<List<Component>> getAllComponents() async {
+    // Get microcontrollers from Supabase
+    final microcontrollers = await Microcontrollers().getComponents();
+    final communicationmodules = await CommunicationModules().getComponents();
+    final actuatorsandmotors = await ActuatorsandMotors().getComponents();
+    final displaysandindicators = await Displaysandindicators().getComponents();
+    final sensors = await Sensors().getComponents();
+
     return [
-      ...Microcontrollers().components,
-      ...CommunicationModules().components,
-      ...Sensors().components,
-      ...Displaysandindicators().components,
-      ...ActuatorsandMotors().components,
-      ...Audiomodules().components,
+      ...microcontrollers,
+      ...communicationmodules,
+      ...sensors,
+      ...displaysandindicators,
+      ...actuatorsandmotors,
     ];
   }
 
@@ -99,32 +129,46 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(height: 20),
               Expanded(
-                child: Obx(
-                  () => ListView.builder(
-                    cacheExtent: 400,
-                    itemCount: controller.foundComponents.length,
-                    itemBuilder: (context, index) {
-                      final component = controller.foundComponents[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 5),
-                        child: ListTile(
-                          onTap: () {
-                            Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => ComponentInClassScreen(
-                                    component: component)));
-                          },
-                          title: Text(
-                            component.name,
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text(
-                            'Box No: ${component.boxNo}\nStock: ${component.stock}',
+                child: isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.blue),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadAllComponents,
+                        child: Obx(
+                          () => ListView.builder(
+                            cacheExtent: 400,
+                            itemCount: controller.foundComponents.length,
+                            itemBuilder: (context, index) {
+                              final component =
+                                  controller.foundComponents[index];
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 5),
+                                child: ListTile(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                ComponentInClassScreen(
+                                                    component: component)));
+                                  },
+                                  title: Text(
+                                    component.name,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  subtitle: Text(
+                                    'Box No: ${component.boxNo}\nStock: ${component.stock}',
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ),
               ),
             ],
           ),

@@ -37,10 +37,9 @@ dependencies:
   smooth_page_indicator: ^1.1.0
   get: ^4.6.5
   mobile_scanner: ^3.5.6
-  flutter_barcode_scanner: ^2.0.0
   google_sign_in: ^6.2.1
   supabase_flutter: ^2.5.6
-  intl: ^0.19.0
+  intl: ^0.20.2
   flutter_riverpod: ^2.5.1
   flutter_pdfview: ^1.3.2
   shared_preferences: ^2.3.5
@@ -51,7 +50,9 @@ dependencies:
   image_picker: ^1.1.2
   uuid: ^4.5.1
   permission_handler: ^11.3.0
-  qr_code_scanner: ^1.0.1
+  awesome_snackbar_content: ^0.1.6
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.5
   
   
   # syncfusion_flutter_pdfviewer: ^26.1.40

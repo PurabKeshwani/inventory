@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:inventory/src/common_widgets/app_bar.dart';
-import 'package:flutter/services.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -11,60 +10,75 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
-  String _scanBarcode = 'Unknown';
+  String _scanBarcode = 'No barcode scanned yet';
+  final MobileScannerController controller = MobileScannerController();
 
-  void initState() {
-    super.initState();
-  }
-
-  Future<void> startBarcodeScanStream() async {
-    FlutterBarcodeScanner.getBarcodeStreamReceiver(
-            '#ff6666', 'Cancel', true, ScanMode.BARCODE)!
-        .listen((barcode) => print(barcode));
-  }
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> scanBarcodeNormal() async {
-    String barcodeScanRes;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-          '#ff6666', 'Cancel', true, ScanMode.BARCODE);
-      print(barcodeScanRes);
-    } on PlatformException {
-      barcodeScanRes = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _scanBarcode = barcodeScanRes;
-    });
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: const Text('Barcode scan')),
-        body: Builder(builder: (BuildContext context) {
-          return Container(
-              alignment: Alignment.center,
-              child: Flex(
-                  direction: Axis.vertical,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    ElevatedButton(
-                        onPressed: () => scanBarcodeNormal(),
-                        child: Text('Start barcode scan')),
-                    ElevatedButton(
-                        onPressed: () => startBarcodeScanStream(),
-                        child: Text('Start barcode scan stream')),
-                    Text('Scan result : $_scanBarcode\n',
-                        style: TextStyle(fontSize: 20))
-                  ]));
-        }));
+      appBar: AppBar(
+        title: const Text('Barcode Scanner'),
+        actions: [
+          IconButton(
+            icon: ValueListenableBuilder(
+              valueListenable: controller.torchState,
+              builder: (context, state, child) {
+                switch (state) {
+                  case TorchState.off:
+                    return const Icon(Icons.flash_off);
+                  case TorchState.on:
+                    return const Icon(Icons.flash_on);
+                }
+              },
+            ),
+            onPressed: () => controller.toggleTorch(),
+          ),
+          IconButton(
+            icon: ValueListenableBuilder(
+              valueListenable: controller.cameraFacingState,
+              builder: (context, state, child) {
+                switch (state) {
+                  case CameraFacing.front:
+                    return const Icon(Icons.camera_front);
+                  case CameraFacing.back:
+                    return const Icon(Icons.camera_rear);
+                }
+              },
+            ),
+            onPressed: () => controller.switchCamera(),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: MobileScanner(
+              controller: controller,
+              onDetect: (capture) {
+                final List<Barcode> barcodes = capture.barcodes;
+                for (final barcode in barcodes) {
+                  setState(() {
+                    _scanBarcode = barcode.rawValue ?? 'Failed to scan';
+                  });
+                }
+              },
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Scan result: $_scanBarcode',
+              style: const TextStyle(fontSize: 20),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
