@@ -21,17 +21,76 @@ class Componentcontroller extends GetxController {
 
   void addComponent(Component component) {
     components.add(component);
-    foundComponents.add(component);
+    _updateGroupedComponents();
+  }
+
+  void _updateGroupedComponents() {
+    // Group components by name and calculate total stock
+    Map<String, int> groupedStock = {};
+    Map<String, Component> groupedComponents = {};
+
+    for (Component component in components) {
+      if (groupedStock.containsKey(component.name)) {
+        groupedStock[component.name] =
+            groupedStock[component.name]! + component.stock;
+      } else {
+        groupedStock[component.name] = component.stock;
+        groupedComponents[component.name] = component;
+      }
+    }
+
+    // Create a list of components with grouped stock
+    List<Component> groupedList = groupedComponents.entries.map((entry) {
+      Component originalComponent = entry.value;
+      return Component(
+        skuId: originalComponent.skuId,
+        name: originalComponent.name,
+        boxNo: originalComponent.boxNo,
+        stock: groupedStock[entry.key]!,
+        warning: originalComponent.warning,
+      );
+    }).toList();
+
+    foundComponents.value = groupedList;
   }
 
   void filterComponents(String query) {
     if (query.isEmpty) {
-      foundComponents.value = components;
+      _updateGroupedComponents();
     } else {
-      foundComponents.value = components
+      // Get all components that match the query
+      List<Component> matchingComponents = components
           .where((component) =>
               component.name.toLowerCase().contains(query.toLowerCase()))
           .toList();
+
+      // Group matching components by name and calculate total stock
+      Map<String, int> groupedStock = {};
+      Map<String, Component> groupedComponents = {};
+
+      for (Component component in matchingComponents) {
+        if (groupedStock.containsKey(component.name)) {
+          groupedStock[component.name] =
+              groupedStock[component.name]! + component.stock;
+        } else {
+          groupedStock[component.name] = component.stock;
+          groupedComponents[component.name] = component;
+        }
+      }
+
+      // Create a list of components with grouped stock
+      List<Component> groupedList = groupedComponents.entries.map((entry) {
+        Component originalComponent = entry.value;
+        return Component(
+          skuId: originalComponent.skuId,
+          name: originalComponent.name,
+          boxNo: originalComponent.boxNo,
+          stock: groupedStock[entry.key]!,
+          warning: originalComponent.warning,
+        );
+      }).toList();
+
+      foundComponents.value = groupedList;
     }
   }
 }
@@ -160,8 +219,20 @@ class _SearchScreenState extends State<SearchScreen> {
                                     style: const TextStyle(
                                         fontWeight: FontWeight.bold),
                                   ),
-                                  subtitle: Text(
-                                    'Box No: ${component.boxNo}\nStock: ${component.stock}',
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Stock: ${component.stock}'),
+                                      const SizedBox(height: 4),
+                                      SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Text(
+                                          'Box No: ${component.boxNo}',
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );
