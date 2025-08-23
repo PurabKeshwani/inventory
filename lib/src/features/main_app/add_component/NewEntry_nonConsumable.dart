@@ -34,7 +34,7 @@ class _NewentryState extends State<Newentry> {
         // Debounce the analysis to avoid too many calls while typing
         Future.delayed(const Duration(milliseconds: 500), () {
           if (barcodecontroller.text.isNotEmpty) {
-            componentcontroller.skuidanalyzeAsync(barcodecontroller.text);
+            componentcontroller.skuidanalyze(barcodecontroller.text);
           }
         });
       }
@@ -268,8 +268,8 @@ class _NewentryState extends State<Newentry> {
         );
       }
 
-      // Use async version to ensure microcontroller data is loaded
-      await componentcontroller.skuidanalyzeAsync(scanResult);
+      // Use async version to ensure component data is loaded
+      await componentcontroller.skuidanalyze(scanResult);
 
       // Update stock controller with the quantity from database if available
       if (componentcontroller.Quantity.value > 0) {

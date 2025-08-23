@@ -142,7 +142,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
     if (componentcontroller != null) {
       try {
-        componentcontroller.skuidanalyze(barcode);
+        await componentcontroller.skuidanalyze(barcode);
         print(
             'DEBUG: SKUID analyzed - ClassName: ${componentcontroller.ClassName.value}');
 
@@ -494,96 +494,277 @@ class _TransactionScreenState extends State<TransactionScreen> {
             SizedBox(height: 20),
             // Scrollable list section
             Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 15),
-                itemCount: componentcontroller.Cartcomponents.length,
-                itemBuilder: (ctx, index) {
-                  final component = componentcontroller.Cartcomponents[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Container(
-                      width: MediaQuery.of(context).size.width * 0.8,
-                      height: 130,
-                      decoration: BoxDecoration(
-                        color: Color.fromARGB(39, 5, 168, 244),
-                        borderRadius: BorderRadius.all(Radius.circular(16)),
-                      ),
+              child: componentcontroller.Cartcomponents.isEmpty
+                  ? Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 10, left: 10),
-                                child: Text(
-                                  component.skuid,
-                                  style: GoogleFonts.lato(
-                                      color: Colors.black, fontSize: 20),
-                                ),
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 80,
+                            color: Color(0xff19335A).withOpacity(0.3),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No components added yet',
+                            style: GoogleFonts.lato(
+                              textStyle: TextStyle(
+                                color: Color(0xff19335A).withOpacity(0.6),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
                               ),
-                              SizedBox(width: 55, height: 0.2),
-                              IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    componentcontroller.Cartcomponents.remove(
-                                        component);
-                                  });
-                                },
-                                icon: Icon(Icons.delete, color: Colors.red),
-                              )
-                            ],
+                            ),
                           ),
-                          Row(
-                            children: [
-                              const SizedBox(height: 10),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 10, left: 10),
-                            child: Text(
-                              component.compname,
-                              style: GoogleFonts.lato(
-                                  color: Colors.black, fontSize: 15),
+                          SizedBox(height: 8),
+                          Text(
+                            'Scan a barcode to add components to your cart',
+                            style: GoogleFonts.lato(
+                              textStyle: TextStyle(
+                                color: Color(0xff19335A).withOpacity(0.4),
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         ],
                       ),
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.symmetric(horizontal: 15),
+                      itemCount: componentcontroller.Cartcomponents.length,
+                      itemBuilder: (ctx, index) {
+                        final component =
+                            componentcontroller.Cartcomponents[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  // Component details
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // SKU ID
+                                        Text(
+                                          component.skuid,
+                                          style: GoogleFonts.lato(
+                                            textStyle: TextStyle(
+                                              color: Color(0xff19335A),
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        // Component name
+                                        Text(
+                                          component.compname,
+                                          style: GoogleFonts.lato(
+                                            textStyle: TextStyle(
+                                              color: Colors.black87,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: 8),
+                                        // Quantity badge
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xff19335A)
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            'Qty: ${component.Quantity}',
+                                            style: GoogleFonts.lato(
+                                              textStyle: TextStyle(
+                                                color: Color(0xff19335A),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Delete button
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          componentcontroller.Cartcomponents
+                                              .remove(component);
+                                        });
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Component removed from cart'),
+                                            backgroundColor: Colors.red,
+                                            duration: Duration(seconds: 2),
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        );
+                                      },
+                                      icon: Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                        size: 20,
+                                      ),
+                                      padding: EdgeInsets.all(8),
+                                      constraints: BoxConstraints(
+                                        minWidth: 36,
+                                        minHeight: 36,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
             // Fixed footer section
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: TextButton(
-                onPressed: () {
-                  print(
-                      'Navigating with Transaction ID: ${componentcontroller.transactionid.value}');
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => Cartscreen()));
-                },
-                child: Container(
-                  width: 300,
-                  decoration: const BoxDecoration(
-                    color: Color(0xff19335A),
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: Offset(0, -2),
+                    spreadRadius: 0,
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  alignment: Alignment.center,
-                  child: Text(
-                    'View Cart',
-                    style: GoogleFonts.lato(
-                      textStyle: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Cart info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Cart Summary',
+                          style: GoogleFonts.lato(
+                            textStyle: TextStyle(
+                              color: Color(0xff19335A),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '${componentcontroller.Cartcomponents.length} component${componentcontroller.Cartcomponents.length == 1 ? '' : 's'}',
+                          style: GoogleFonts.lato(
+                            textStyle: TextStyle(
+                              color: Color(0xff19335A).withOpacity(0.7),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // View Cart button
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xff19335A),
+                          Color(0xff19335A).withOpacity(0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xff19335A).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          print(
+                              'Navigating with Transaction ID: ${componentcontroller.transactionid.value}');
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Cartscreen()));
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.shopping_cart_outlined,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'View Cart',
+                                style: GoogleFonts.lato(
+                                  textStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ],

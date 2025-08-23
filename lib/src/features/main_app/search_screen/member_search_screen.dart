@@ -165,11 +165,11 @@ class MemberController extends GetxController {
 
       // Categorize members by batch
       beMembers.value =
-          members.where((member) => member.id.startsWith('2021-')).toList();
-      teMembers.value =
           members.where((member) => member.id.startsWith('2022-')).toList();
-      seMembers.value =
+      teMembers.value =
           members.where((member) => member.id.startsWith('2023-')).toList();
+      seMembers.value =
+          members.where((member) => member.id.startsWith('2024-')).toList();
 
       foundMembers.value = members;
     } catch (error) {
