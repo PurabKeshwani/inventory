@@ -92,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: CircleAvatar(
                       backgroundImage: _image != null
                           ? FileImage(_image!) as ImageProvider
-                          :AssetImage("assets/logo/ISA-Header-(LogoOnly)"),
+                          : AssetImage("assets/logo/ISA-Header-(LogoOnly)"),
                       radius: 90,
                     ),
                   ),

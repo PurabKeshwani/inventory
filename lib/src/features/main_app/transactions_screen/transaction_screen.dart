@@ -130,13 +130,14 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Future<void> _processBarcode(String scanResult) async {
-    print('DEBUG: Processing barcode: $scanResult');
+    final String sanitized = scanResult.trim();
+    print('DEBUG: Processing barcode: $sanitized');
 
     if (!mounted) return;
 
     setState(() {
-      _scanBarcode = scanResult;
-      barcode = scanResult;
+      _scanBarcode = sanitized;
+      barcode = sanitized;
       print('DEBUG: Updated barcode state: $barcode');
     });
 
@@ -283,10 +284,12 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           final List<Barcode> barcodes = capture.barcodes;
                           if (barcodes.isNotEmpty) {
                             final String? code = barcodes.first.rawValue;
-                            if (code != null && code.isNotEmpty) {
-                              print('DEBUG: Barcode detected: $code');
+                            if (code != null) {
+                              final String normalized = code.trim();
+                              if (normalized.isEmpty) return;
+                              print('DEBUG: Barcode detected: $normalized');
                               Navigator.pop(context); // Close scanner
-                              _processBarcode(code);
+                              _processBarcode(normalized);
                             }
                           }
                         },

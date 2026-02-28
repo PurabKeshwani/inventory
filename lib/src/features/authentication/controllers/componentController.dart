@@ -5,13 +5,6 @@ import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:get/state_manager.dart';
 import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/data/model.dart';
-import 'package:inventory/src/data/microControllerList.dart';
-import 'package:inventory/src/data/powercomponents.dart';
-import 'package:inventory/src/data/sensors.dart';
-import 'package:inventory/src/data/Communication Modules.dart';
-import 'package:inventory/src/data/Actuators&Motors.dart';
-import 'package:inventory/src/data/DisplaysandIndicators.dart';
-import 'package:inventory/src/data/othermodulesandcomponents.dart';
 import 'package:inventory/src/services/microcontroller_service.dart';
 import 'package:inventory/src/services/powercomponent_service.dart';
 import 'package:inventory/src/services/sensor_service.dart';
@@ -382,6 +375,61 @@ class ComponentController extends GetxController {
     }
   }
 
+  // Extract the base of a SKU by removing a trailing numeric segment after the last '-'
+  String _extractSkuBase(String skuId) {
+    final trimmed = skuId.trim();
+    final match = RegExp(r'^(.*?)-(\d+)$').firstMatch(trimmed);
+    if (match != null) {
+      return match.group(1) ?? trimmed;
+    }
+    return trimmed;
+  }
+
+  // Find first component in cache whose SKU starts with the same base prefix
+  Component? _findComponentByPrefixInCache(
+      String skuId, List<Component> cache) {
+    final base = _extractSkuBase(skuId).toLowerCase();
+    try {
+      final prefixMatch = cache.firstWhere(
+        (component) =>
+            (component.skuId ?? '').trim().toLowerCase().startsWith(base + '-'),
+        orElse: () => throw Exception('Not found'),
+      );
+      print(
+          'Prefix match found in cache for base "$base": ${prefixMatch.name} (${prefixMatch.skuId})');
+      return prefixMatch;
+    } catch (e) {
+      print('No prefix match found in cache for base: $base');
+      return null;
+    }
+  }
+
+  // Find first component in database whose SKU starts with the same base prefix (case-insensitive)
+  Future<Component?> _findComponentBySkuPrefix(
+      String skuId, String tableName) async {
+    final base = _extractSkuBase(skuId);
+    print('Looking for prefix "$base-" in table: $tableName');
+    try {
+      final List<dynamic> response = await Supabase.instance.client
+          .from(tableName)
+          .select('skuid, name, boxno, stock, warning')
+          .ilike('skuid', base + '-%')
+          .limit(1);
+
+      if (response.isNotEmpty) {
+        final component = Component.fromJson(response.first);
+        print(
+            'Found prefix match in database: ${component.name} (${component.skuId})');
+        return component;
+      }
+      print('No prefix match found in database for base: $base');
+      return null;
+    } catch (e) {
+      print('Error querying database for prefix match: $e');
+      return null;
+    }
+  }
+
   // Main SKU analysis method - now completely database-driven
   Future<void> skuidanalyze(String elem) async {
     print('Analyzing SKUID: $elem');
@@ -414,8 +462,30 @@ class ComponentController extends GetxController {
         return;
       }
 
+      // If exact not found, try prefix-based match (e.g., MC-ESP32-DEV-XXX)
+      final prefixCache =
+          _findComponentByPrefixInCache(elem, _microcontrollerCache);
+      if (prefixCache != null) {
+        CompName.value = prefixCache.name;
+        Boxname.value = prefixCache.boxNo;
+        Quantity.value = prefixCache.stock;
+        print(
+            'Using prefix cache match: ${prefixCache.name} - Box: ${prefixCache.boxNo} - Stock: ${prefixCache.stock}');
+        return;
+      }
+
+      final prefixDb = await _findComponentBySkuPrefix(elem, 'Microcontroller');
+      if (prefixDb != null) {
+        CompName.value = prefixDb.name;
+        Boxname.value = prefixDb.boxNo;
+        Quantity.value = prefixDb.stock;
+        print(
+            'Using prefix DB match: ${prefixDb.name} - Box: ${prefixDb.boxNo} - Stock: ${prefixDb.stock}');
+        return;
+      }
+
       // If not found, set default values
-      print('Not found in database: $elem');
+      print('Not found in database (even by prefix): $elem');
       CompName.value = 'Unknown Microcontroller';
       Boxname.value = 'MC-00';
       Quantity.value = 0;
@@ -450,8 +520,31 @@ class ComponentController extends GetxController {
         return;
       }
 
+      // If exact not found, try prefix-based match
+      final prefixCache =
+          _findComponentByPrefixInCache(elem, _communicationModuleCache);
+      if (prefixCache != null) {
+        CompName.value = prefixCache.name;
+        Boxname.value = prefixCache.boxNo;
+        Quantity.value = prefixCache.stock;
+        print(
+            'Using prefix cache match: ${prefixCache.name} - Box: ${prefixCache.boxNo} - Stock: ${prefixCache.stock}');
+        return;
+      }
+
+      final prefixDb =
+          await _findComponentBySkuPrefix(elem, 'Communication Modules');
+      if (prefixDb != null) {
+        CompName.value = prefixDb.name;
+        Boxname.value = prefixDb.boxNo;
+        Quantity.value = prefixDb.stock;
+        print(
+            'Using prefix DB match: ${prefixDb.name} - Box: ${prefixDb.boxNo} - Stock: ${prefixDb.stock}');
+        return;
+      }
+
       // If not found, set default values
-      print('Not found in database: $elem');
+      print('Not found in database (even by prefix): $elem');
       CompName.value = 'Unknown Communication Module';
       Boxname.value = 'CM-00';
       Quantity.value = 0;
@@ -484,8 +577,29 @@ class ComponentController extends GetxController {
         return;
       }
 
+      // If exact not found, try prefix-based match
+      final prefixCache = _findComponentByPrefixInCache(elem, _sensorCache);
+      if (prefixCache != null) {
+        CompName.value = prefixCache.name;
+        Boxname.value = prefixCache.boxNo;
+        Quantity.value = prefixCache.stock;
+        print(
+            'Using prefix cache match: ${prefixCache.name} - Box: ${prefixCache.boxNo} - Stock: ${prefixCache.stock}');
+        return;
+      }
+
+      final prefixDb = await _findComponentBySkuPrefix(elem, 'Sensors');
+      if (prefixDb != null) {
+        CompName.value = prefixDb.name;
+        Boxname.value = prefixDb.boxNo;
+        Quantity.value = prefixDb.stock;
+        print(
+            'Using prefix DB match: ${prefixDb.name} - Box: ${prefixDb.boxNo} - Stock: ${prefixDb.stock}');
+        return;
+      }
+
       // If not found, set default values
-      print('Not found in database: $elem');
+      print('Not found in database (even by prefix): $elem');
       CompName.value = 'Unknown Sensor';
       Boxname.value = 'SN-00';
       Quantity.value = 0;
@@ -520,8 +634,31 @@ class ComponentController extends GetxController {
         return;
       }
 
+      // If exact not found, try prefix-based match
+      final prefixCache =
+          _findComponentByPrefixInCache(elem, _displayIndicatorCache);
+      if (prefixCache != null) {
+        CompName.value = prefixCache.name;
+        Boxname.value = prefixCache.boxNo;
+        Quantity.value = prefixCache.stock;
+        print(
+            'Using prefix cache match: ${prefixCache.name} - Box: ${prefixCache.boxNo} - Stock: ${prefixCache.stock}');
+        return;
+      }
+
+      final prefixDb =
+          await _findComponentBySkuPrefix(elem, 'Displays and Indicators');
+      if (prefixDb != null) {
+        CompName.value = prefixDb.name;
+        Boxname.value = prefixDb.boxNo;
+        Quantity.value = prefixDb.stock;
+        print(
+            'Using prefix DB match: ${prefixDb.name} - Box: ${prefixDb.boxNo} - Stock: ${prefixDb.stock}');
+        return;
+      }
+
       // If not found, set default values
-      print('Not found in database: $elem');
+      print('Not found in database (even by prefix): $elem');
       CompName.value = 'Unknown Display/Indicator';
       Boxname.value = 'DI-00';
       Quantity.value = 0;
@@ -555,8 +692,31 @@ class ComponentController extends GetxController {
         return;
       }
 
+      // If exact not found, try prefix-based match
+      final prefixCache =
+          _findComponentByPrefixInCache(elem, _actuatorMotorCache);
+      if (prefixCache != null) {
+        CompName.value = prefixCache.name;
+        Boxname.value = prefixCache.boxNo;
+        Quantity.value = prefixCache.stock;
+        print(
+            'Using prefix cache match: ${prefixCache.name} - Box: ${prefixCache.boxNo} - Stock: ${prefixCache.stock}');
+        return;
+      }
+
+      final prefixDb =
+          await _findComponentBySkuPrefix(elem, 'Actuators and Motors');
+      if (prefixDb != null) {
+        CompName.value = prefixDb.name;
+        Boxname.value = prefixDb.boxNo;
+        Quantity.value = prefixDb.stock;
+        print(
+            'Using prefix DB match: ${prefixDb.name} - Box: ${prefixDb.boxNo} - Stock: ${prefixDb.stock}');
+        return;
+      }
+
       // If not found, set default values
-      print('Not found in database: $elem');
+      print('Not found in database (even by prefix): $elem');
       CompName.value = 'Unknown Actuator/Motor';
       Boxname.value = 'AC-00';
       Quantity.value = 0;
@@ -589,8 +749,31 @@ class ComponentController extends GetxController {
         return;
       }
 
+      // If exact not found, try prefix-based match
+      final prefixCache =
+          _findComponentByPrefixInCache(elem, _powercomponentCache);
+      if (prefixCache != null) {
+        CompName.value = prefixCache.name;
+        Boxname.value = prefixCache.boxNo;
+        Quantity.value = prefixCache.stock;
+        print(
+            'Using prefix cache match: ${prefixCache.name} - Box: ${prefixCache.boxNo} - Stock: ${prefixCache.stock}');
+        return;
+      }
+
+      final prefixDb =
+          await _findComponentBySkuPrefix(elem, 'Power Components');
+      if (prefixDb != null) {
+        CompName.value = prefixDb.name;
+        Boxname.value = prefixDb.boxNo;
+        Quantity.value = prefixDb.stock;
+        print(
+            'Using prefix DB match: ${prefixDb.name} - Box: ${prefixDb.boxNo} - Stock: ${prefixDb.stock}');
+        return;
+      }
+
       // If not found, set default values
-      print('Not found in database: $elem');
+      print('Not found in database (even by prefix): $elem');
       CompName.value = 'Unknown Power Component';
       Boxname.value = 'PW-00';
       Quantity.value = 0;
@@ -624,8 +807,30 @@ class ComponentController extends GetxController {
         return;
       }
 
+      // If exact not found, try prefix-based match
+      final prefixCache =
+          _findComponentByPrefixInCache(elem, _otherComponentsCache);
+      if (prefixCache != null) {
+        CompName.value = prefixCache.name;
+        Boxname.value = prefixCache.boxNo;
+        Quantity.value = prefixCache.stock;
+        print(
+            'Using prefix cache match: ${prefixCache.name} - Box: ${prefixCache.boxNo} - Stock: ${prefixCache.stock}');
+        return;
+      }
+
+      final prefixDb = await _findComponentBySkuPrefix(elem, 'Others');
+      if (prefixDb != null) {
+        CompName.value = prefixDb.name;
+        Boxname.value = prefixDb.boxNo;
+        Quantity.value = prefixDb.stock;
+        print(
+            'Using prefix DB match: ${prefixDb.name} - Box: ${prefixDb.boxNo} - Stock: ${prefixDb.stock}');
+        return;
+      }
+
       // If not found, set default values
-      print('Not found in database: $elem');
+      print('Not found in database (even by prefix): $elem');
       CompName.value = 'Unknown Component';
       Boxname.value = 'OT-00';
       Quantity.value = 0;

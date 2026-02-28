@@ -8,6 +8,12 @@ class Emailcontroller extends GetxController {
   RxString Namefrommail = ''.obs;
 
   final List<String> emails = [
+    '2024.dhruv.sangam@ves.ac.in',
+    '2024.varun.santani@ves.ac.in',
+    '2024.nirmiti.nalawade@ves.ac.in',
+    'd2025.aditya.sasane@ves.ac.in',
+    '2024.sana.patil@ves.ac.in',
+    '2024.arnav.nair@ves.ac.in',
     'adityamhatre2003@gmail.com',
     'sahoocharchit@gmail.com',
     '2022.kaustubh.natalkar@ves.ac.in',
@@ -25,6 +31,12 @@ class Emailcontroller extends GetxController {
   ];
 
   final Map<String, String> emailToName = {
+    '2024.dhruv.sangam@ves.ac.in': 'Dhruv Sangam',
+    '2024.varun.santani@ves.ac.in': 'Varun Santani',
+    '2024.nirmiti.nalawade@ves.ac.in': 'Nirmiti Nalawade',
+    'd2025.aditya.sasane@ves.ac.in': 'Aditya Sasane',
+    '2024.sana.patil@ves.ac.in': 'Sana Patil',
+    '2024.arnav.nair@ves.ac.in': 'Arnav Nair',
     'adityamhatre2003@gmail.com': 'Aditya Mhatre',
     'sahoochrchit@gmail.com': 'Charchit Sahoo',
     '2022.kaustubh.natalkar@ves.ac.in': 'Kaustubh Natalkar',
