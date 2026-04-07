@@ -53,6 +53,7 @@ dependencies:
   awesome_snackbar_content: ^0.1.6
   flutter_bloc: ^9.1.1
   equatable: ^2.0.5
+  http: ^1.6.0
   
   
   # syncfusion_flutter_pdfviewer: ^26.1.40
