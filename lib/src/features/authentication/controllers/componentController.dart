@@ -392,7 +392,7 @@ class ComponentController extends GetxController {
     try {
       final prefixMatch = cache.firstWhere(
         (component) =>
-            (component.skuId ?? '').trim().toLowerCase().startsWith(base + '-'),
+            (component.skuId ?? '').trim().toLowerCase().startsWith('$base-'),
         orElse: () => throw Exception('Not found'),
       );
       print(
@@ -413,7 +413,7 @@ class ComponentController extends GetxController {
       final List<dynamic> response = await Supabase.instance.client
           .from(tableName)
           .select('skuid, name, boxno, stock, warning')
-          .ilike('skuid', base + '-%')
+          .ilike('skuid', '$base-%')
           .limit(1);
 
       if (response.isNotEmpty) {

@@ -25,7 +25,7 @@ class LoginScreen extends StatelessWidget {
                       "assets/images/isa-vesit-color-logo.png"),
                   height: size.height * 0.2,
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 15,
                 ),
                 Text("Welcome Back",

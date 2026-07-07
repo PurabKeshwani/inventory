@@ -8,6 +8,8 @@ class Emailcontroller extends GetxController {
   RxString Namefrommail = ''.obs;
 
   final List<String> emails = [
+    'n.gopalkrishnan@ves.ac.in',
+    '2024.tanvi.jagade@ves.ac.in',
     '2024.dhruv.sangam@ves.ac.in',
     '2024.varun.santani@ves.ac.in',
     '2024.nirmiti.nalawade@ves.ac.in',
@@ -31,6 +33,8 @@ class Emailcontroller extends GetxController {
   ];
 
   final Map<String, String> emailToName = {
+    'n.gopalkrishnan@ves.ac.in': 'N. Gopalkrishnan',
+    '2024.tanvi.jagade@ves.ac.in': 'Tanvi Jagade',
     '2024.dhruv.sangam@ves.ac.in': 'Dhruv Sangam',
     '2024.varun.santani@ves.ac.in': 'Varun Santani',
     '2024.nirmiti.nalawade@ves.ac.in': 'Nirmiti Nalawade',
@@ -38,7 +42,7 @@ class Emailcontroller extends GetxController {
     '2024.sana.patil@ves.ac.in': 'Sana Patil',
     '2024.arnav.nair@ves.ac.in': 'Arnav Nair',
     'adityamhatre2003@gmail.com': 'Aditya Mhatre',
-    'sahoochrchit@gmail.com': 'Charchit Sahoo',
+    'sahoocharchit@gmail.com': 'Charchit Sahoo',
     '2022.kaustubh.natalkar@ves.ac.in': 'Kaustubh Natalkar',
     'd2021.atishkar.singh@ves.ac.in': 'Atishkar Singh',
     'kaustubhworlikar1308@gmail.com': 'Kaustubh Worlikar',
@@ -57,7 +61,7 @@ class Emailcontroller extends GetxController {
     if (emails.contains(emailget.value)) {
       print('email is valid');
       isValidating.value = true;
-      Get.to(MainScreen());
+      Get.to(const MainScreen());
     } else {
       isValidating.value = false;
     }

@@ -58,7 +58,7 @@ class _NewentryState extends State<Newentry> {
         print('DEBUG: Camera permission denied');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Camera permission is required for scanning'),
               backgroundColor: Colors.red,
               duration: Duration(seconds: 2),
@@ -92,8 +92,8 @@ class _NewentryState extends State<Newentry> {
               children: [
                 // Header
                 Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
                     color: Color(0xff19335A),
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
@@ -106,7 +106,7 @@ class _NewentryState extends State<Newentry> {
                       Text(
                         'Scan Barcode',
                         style: GoogleFonts.lato(
-                          textStyle: TextStyle(
+                          textStyle: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -114,7 +114,7 @@ class _NewentryState extends State<Newentry> {
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.close, color: Colors.white),
+                        icon: const Icon(Icons.close, color: Colors.white),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -150,7 +150,7 @@ class _NewentryState extends State<Newentry> {
                           ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        margin: EdgeInsets.all(40),
+                        margin: const EdgeInsets.all(40),
                       ),
                       // Corner markers
                       Positioned(
@@ -159,7 +159,7 @@ class _NewentryState extends State<Newentry> {
                         child: Container(
                           width: 20,
                           height: 20,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             border: Border(
                               top: BorderSide(color: Colors.white, width: 3),
                               left: BorderSide(color: Colors.white, width: 3),
@@ -173,7 +173,7 @@ class _NewentryState extends State<Newentry> {
                         child: Container(
                           width: 20,
                           height: 20,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             border: Border(
                               top: BorderSide(color: Colors.white, width: 3),
                               right: BorderSide(color: Colors.white, width: 3),
@@ -187,7 +187,7 @@ class _NewentryState extends State<Newentry> {
                         child: Container(
                           width: 20,
                           height: 20,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             border: Border(
                               bottom: BorderSide(color: Colors.white, width: 3),
                               left: BorderSide(color: Colors.white, width: 3),
@@ -201,7 +201,7 @@ class _NewentryState extends State<Newentry> {
                         child: Container(
                           width: 20,
                           height: 20,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             border: Border(
                               bottom: BorderSide(color: Colors.white, width: 3),
                               right: BorderSide(color: Colors.white, width: 3),
@@ -225,7 +225,7 @@ class _NewentryState extends State<Newentry> {
           SnackBar(
             content: Text('Error accessing scanner: $e'),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -246,7 +246,7 @@ class _NewentryState extends State<Newentry> {
       // Show loading indicator while analyzing SKU
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Row(
               children: [
                 SizedBox(
@@ -299,7 +299,7 @@ class _NewentryState extends State<Newentry> {
           SnackBar(
             content: Text(message),
             backgroundColor: backgroundColor,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -312,7 +312,7 @@ class _NewentryState extends State<Newentry> {
           SnackBar(
             content: Text('Error processing barcode: $e'),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -382,7 +382,7 @@ class _NewentryState extends State<Newentry> {
       bool skuExists = await _checkSkuExists(barcodecontroller.text);
       if (skuExists) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text(
                 'A component with this SKU ID already exists. Please use a different SKU ID.'),
             backgroundColor: Colors.red,
@@ -407,7 +407,7 @@ class _NewentryState extends State<Newentry> {
       print("Data inserted successfully");
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Component added successfully'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
@@ -429,7 +429,7 @@ class _NewentryState extends State<Newentry> {
         SnackBar(
           content: Text(errorMessage),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -456,16 +456,16 @@ class _NewentryState extends State<Newentry> {
               onPressed: _startBarcodeScan,
               child: Container(
                 width: 300,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Color(0xff19335A),
                   borderRadius: BorderRadius.all(Radius.circular(8)),
                 ),
-                padding: EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 alignment: Alignment.center,
                 child: Text(
                   'Scan the Barcode',
                   style: GoogleFonts.lato(
-                    textStyle: TextStyle(
+                    textStyle: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: 18,
@@ -478,8 +478,8 @@ class _NewentryState extends State<Newentry> {
               padding: const EdgeInsets.all(25.0),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Color.fromARGB(255, 4, 13, 56)),
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  border: Border.all(color: const Color.fromARGB(255, 4, 13, 56)),
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
                 child: TextFormField(
                   controller: barcodecontroller,
@@ -524,21 +524,21 @@ class _NewentryState extends State<Newentry> {
               padding: const EdgeInsets.all(25.0),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Color.fromARGB(255, 4, 13, 56)),
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  border: Border.all(color: const Color.fromARGB(255, 4, 13, 56)),
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
                 child: TextField(
                   controller: componentcontroller.namecontroller,
                   maxLines: 6,
                   minLines: 1,
-                  style: TextStyle(color: const Color.fromARGB(255, 5, 5, 5)),
+                  style: const TextStyle(color: Color.fromARGB(255, 5, 5, 5)),
                   decoration: InputDecoration(
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     label: Text(
                       "Name",
                       style: GoogleFonts.lato(
-                        textStyle: TextStyle(
-                            color: const Color.fromARGB(255, 129, 128, 128)),
+                        textStyle: const TextStyle(
+                            color: Color.fromARGB(255, 129, 128, 128)),
                       ),
                     ),
                   ),
@@ -549,21 +549,21 @@ class _NewentryState extends State<Newentry> {
               padding: const EdgeInsets.all(25.0),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Color.fromARGB(255, 4, 13, 56)),
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  border: Border.all(color: const Color.fromARGB(255, 4, 13, 56)),
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
                 child: TextFormField(
                   controller: componentcontroller.boxnocontroller,
                   maxLines: 6,
                   minLines: 1,
-                  style: TextStyle(color: Color.fromARGB(255, 4, 13, 56)),
+                  style: const TextStyle(color: Color.fromARGB(255, 4, 13, 56)),
                   decoration: InputDecoration(
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     label: Text(
                       "Box No.",
                       style: GoogleFonts.lato(
-                        textStyle: TextStyle(
-                            color: const Color.fromARGB(255, 129, 128, 128)),
+                        textStyle: const TextStyle(
+                            color: Color.fromARGB(255, 129, 128, 128)),
                       ),
                     ),
                   ),
@@ -574,8 +574,8 @@ class _NewentryState extends State<Newentry> {
               padding: const EdgeInsets.all(25.0),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Color.fromARGB(255, 4, 13, 56)),
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  border: Border.all(color: const Color.fromARGB(255, 4, 13, 56)),
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
                 child: TextFormField(
                   controller: stockcontroller,
@@ -615,16 +615,16 @@ class _NewentryState extends State<Newentry> {
               child: Container(
                 width: 300,
                 decoration: BoxDecoration(
-                  color: _isLoading ? Colors.grey : Color(0xff19335A),
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  color: _isLoading ? Colors.grey : const Color(0xff19335A),
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
-                padding: EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 alignment: Alignment.center,
                 child: _isLoading
                     ? Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          SizedBox(
+                          const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
@@ -633,11 +633,11 @@ class _NewentryState extends State<Newentry> {
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           ),
-                          SizedBox(width: 12),
+                          const SizedBox(width: 12),
                           Text(
                             'Adding...',
                             style: GoogleFonts.lato(
-                              textStyle: TextStyle(
+                              textStyle: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 18,
@@ -649,7 +649,7 @@ class _NewentryState extends State<Newentry> {
                     : Text(
                         'Add Component',
                         style: GoogleFonts.lato(
-                          textStyle: TextStyle(
+                          textStyle: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
                             fontSize: 18,

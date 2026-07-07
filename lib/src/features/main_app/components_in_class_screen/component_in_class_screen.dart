@@ -10,7 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ComponentInClassScreen extends StatefulWidget {
   final Component component;
 
-  ComponentInClassScreen({required this.component});
+  const ComponentInClassScreen({super.key, required this.component});
 
   @override
   _ComponentInClassScreenState createState() => _ComponentInClassScreenState();
@@ -66,7 +66,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
         body: RefreshIndicator(
           onRefresh: _refreshData,
           child: SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Container(
               constraints: BoxConstraints(
                 minHeight: MediaQuery.of(context).size.height -
@@ -177,7 +177,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                                         _showEditWarningDialog(listcomponent),
                                     child: Container(
                                       height: 35,
-                                      decoration: BoxDecoration(
+                                      decoration: const BoxDecoration(
                                         border: Border.symmetric(
                                           horizontal:
                                               BorderSide(color: Colors.black),
@@ -242,7 +242,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                                                                 child:
                                                                     Container(
                                                                   padding:
-                                                                      EdgeInsets
+                                                                      const EdgeInsets
                                                                           .all(
                                                                               20),
                                                                   child: Column(
@@ -252,17 +252,17 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                                                                     children: [
                                                                       Container(
                                                                         padding:
-                                                                            EdgeInsets.all(12),
+                                                                            const EdgeInsets.all(12),
                                                                         decoration:
                                                                             BoxDecoration(
                                                                           color: Colors
                                                                               .red
-                                                                              .withOpacity(0.1),
+                                                                              .withValues(alpha: 0.1),
                                                                           shape:
                                                                               BoxShape.circle,
                                                                         ),
                                                                         child:
-                                                                            Icon(
+                                                                            const Icon(
                                                                           Icons
                                                                               .warning_amber_rounded,
                                                                           color:
@@ -271,10 +271,10 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                                                                               40,
                                                                         ),
                                                                       ),
-                                                                      SizedBox(
+                                                                      const SizedBox(
                                                                           height:
                                                                               16),
-                                                                      Text(
+                                                                      const Text(
                                                                         'Warning',
                                                                         style:
                                                                             TextStyle(
@@ -286,7 +286,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                                                                               FontWeight.bold,
                                                                         ),
                                                                       ),
-                                                                      SizedBox(
+                                                                      const SizedBox(
                                                                           height:
                                                                               12),
                                                                       Text(
@@ -306,7 +306,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                                                                               .shade700,
                                                                         ),
                                                                       ),
-                                                                      SizedBox(
+                                                                      const SizedBox(
                                                                           height:
                                                                               20),
                                                                       TextButton(
@@ -314,7 +314,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                                                                             () =>
                                                                                 Navigator.pop(context),
                                                                         child:
-                                                                            Text(
+                                                                            const Text(
                                                                           'OK',
                                                                           style:
                                                                               TextStyle(
@@ -333,13 +333,13 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                                                               ),
                                                             ),
                                                           },
-                                                          child: Icon(
+                                                          child: const Icon(
                                                               Icons
                                                                   .warning_amber_rounded,
                                                               color: Colors.red,
                                                               size: 20),
                                                         )
-                                                      : SizedBox(width: 20),
+                                                      : const SizedBox(width: 20),
                                             ),
                                           ),
                                         ],
@@ -373,7 +373,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
-          padding: EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -384,7 +384,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextField(
                 controller: warningController,
                 decoration: const InputDecoration(
@@ -399,7 +399,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text('Cancel'),
+                    child: const Text('Cancel'),
                   ),
                   TextButton(
                     onPressed: () async {

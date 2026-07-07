@@ -5,6 +5,8 @@ import 'package:inventory/src/common_widgets/sidebar_screens/guidelines_screen.d
 // import 'package:inventory/src/constants/image_strings.dart';
 
 class CustomSideDrawer extends StatelessWidget {
+  const CustomSideDrawer({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -25,7 +27,7 @@ class CustomSideDrawer extends StatelessWidget {
                           "assets/images/isa-vesit-color-logo.png"))),
             ),
             ListTile(
-              title: Text('T&C',style: TextStyle(
+              title: const Text('T&C',style: TextStyle(
                 color: Colors.black
               ),),
               onTap: () {
@@ -34,7 +36,7 @@ class CustomSideDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              title: Text('Fine Policy',style: TextStyle(
+              title: const Text('Fine Policy',style: TextStyle(
                 color: Colors.black
               ),),
               onTap: () {
@@ -43,7 +45,7 @@ class CustomSideDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              title: Text('About',style: TextStyle(
+              title: const Text('About',style: TextStyle(
                 color: Colors.black
               ),),
               onTap: () {

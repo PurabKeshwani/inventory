@@ -299,7 +299,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue[200]!.withOpacity(0.5),
+                        color: Colors.blue[200]!.withValues(alpha: 0.5),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),

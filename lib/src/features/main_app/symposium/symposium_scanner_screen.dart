@@ -238,7 +238,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
 
         if (isContinuousScan) {
           processedScanIds.add(memberId);
-          Future.delayed(Duration(seconds: 5), () {
+          Future.delayed(const Duration(seconds: 5), () {
             if (mounted) {
               processedScanIds.remove(memberId);
             }
@@ -275,19 +275,19 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
         title: Text(
           'Symposium Scanner',
           style: GoogleFonts.lato(
-            textStyle: TextStyle(
+            textStyle: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        backgroundColor: Color(0xff19335A),
-        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: const Color(0xff19335A),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             color: Colors.grey[100],
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -295,7 +295,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
                 Text(
                   'Continuous Scan Mode',
                   style: GoogleFonts.lato(
-                    textStyle: TextStyle(
+                    textStyle: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Color(0xff19335A),
@@ -304,7 +304,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
                 ),
                 Switch(
                   value: isContinuousScan,
-                  activeColor: Color(0xff19335A),
+                  activeThumbColor: const Color(0xff19335A),
                   onChanged: (value) {
                     setState(() {
                       isContinuousScan = value;
@@ -346,7 +346,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
                   child: Container(
                     width: 20,
                     height: 20,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                         border: Border(
                             top: BorderSide(color: Colors.white, width: 3),
                             left: BorderSide(color: Colors.white, width: 3))),
@@ -358,7 +358,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
                   child: Container(
                     width: 20,
                     height: 20,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                         border: Border(
                             top: BorderSide(color: Colors.white, width: 3),
                             right: BorderSide(color: Colors.white, width: 3))),
@@ -370,7 +370,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
                   child: Container(
                     width: 20,
                     height: 20,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                         border: Border(
                             bottom: BorderSide(color: Colors.white, width: 3),
                             left: BorderSide(color: Colors.white, width: 3))),
@@ -382,7 +382,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
                   child: Container(
                     width: 20,
                     height: 20,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                         border: Border(
                             bottom: BorderSide(color: Colors.white, width: 3),
                             right: BorderSide(color: Colors.white, width: 3))),
@@ -391,7 +391,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
                 if (isProcessing)
                   Center(
                     child: Container(
-                      padding: EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       width: 150,
                       decoration: BoxDecoration(
                         color: Colors.black87,
@@ -416,7 +416,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
                               Text(
                                 '$_progressPercent%',
                                 style: GoogleFonts.lato(
-                                  textStyle: TextStyle(
+                                  textStyle: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
@@ -425,8 +425,8 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 15),
-                          Text('Marking...',
+                          const SizedBox(height: 15),
+                          const Text('Marking...',
                               style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w500)),
@@ -438,15 +438,15 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
             ),
           ),
           Container(
-            padding: EdgeInsets.all(20),
-            color: Color(0xff19335A),
+            padding: const EdgeInsets.all(20),
+            color: const Color(0xff19335A),
             width: double.infinity,
             child: Text(
               isContinuousScan
                   ? 'Scan QR codes one after another. Wait 5s between scanning the same QR.'
                   : 'Scan a QR code to mark attendance. It will close after one scan.',
               style: GoogleFonts.lato(
-                textStyle: TextStyle(
+                textStyle: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                 ),

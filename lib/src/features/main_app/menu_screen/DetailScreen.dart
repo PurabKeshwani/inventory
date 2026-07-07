@@ -6,7 +6,7 @@ import 'package:inventory/src/features/main_app/menu_screen/menu_Screen.dart';
 class DetailScreen extends StatelessWidget {
   final fetcheddata fetchedcomp;
 
-  DetailScreen({required this.fetchedcomp});
+  const DetailScreen({super.key, required this.fetchedcomp});
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +45,7 @@ class DetailScreen extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              SizedBox(height: 20),
+                              const SizedBox(height: 20),
                               CircleAvatar(
                                 radius: 60,
                                 backgroundColor: Colors.grey[200],
@@ -92,7 +92,7 @@ class DetailScreen extends StatelessWidget {
                                         color: Colors.grey[600],
                                       ),
                               ),
-                              SizedBox(height: 20),
+                              const SizedBox(height: 20),
                               Text(
                                 'Name: ${fetchedcomp.MemberName}',
                                 style: GoogleFonts.lato(
@@ -100,17 +100,17 @@ class DetailScreen extends StatelessWidget {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
                               Text(
                                 'Class: ${fetchedcomp.div}',
                                 style: GoogleFonts.lato(fontSize: 16),
                               ),
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
                               Text(
                                 'Phone Number: ${fetchedcomp.phonenumber}',
                                 style: GoogleFonts.lato(fontSize: 16),
                               ),
-                              SizedBox(height: 20),
+                              const SizedBox(height: 20),
                               TextButton(
                                 child: Text(
                                   'Close',
@@ -133,7 +133,7 @@ class DetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 'Package Items:',
                 style: GoogleFonts.lato(
@@ -141,7 +141,7 @@ class DetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               for (var item in items)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
@@ -150,7 +150,7 @@ class DetailScreen extends StatelessWidget {
                     style: GoogleFonts.lato(fontSize: 18),
                   ),
                 ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -171,13 +171,13 @@ class DetailScreen extends StatelessWidget {
                           await Clipboard.setData(
                               ClipboardData(text: textToCopy));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
+                            const SnackBar(
                               content: Text('Copied to Clipboard!'),
                             ),
                           );
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
+                            const SnackBar(
                               content: Text('Failed to copy to clipboard.'),
                               backgroundColor: Colors.red,
                             ),
@@ -188,12 +188,12 @@ class DetailScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 'Issued On: ${fetchedcomp.issueDate}',
                 style: GoogleFonts.lato(fontSize: 18),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Returned On: ${fetchedcomp.ReturnDate ?? 'Not Returned'}',
                 style: GoogleFonts.lato(fontSize: 18),

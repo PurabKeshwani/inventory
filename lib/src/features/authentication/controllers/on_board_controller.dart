@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:inventory/src/features/authentication/models/model_onboarding.dart';
 import 'package:inventory/src/features/authentication/screens/onboarding_screen/on_boarding_page_widget.dart';
 import 'package:liquid_swipe/PageHelpers/LiquidController.dart';

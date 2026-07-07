@@ -106,7 +106,7 @@ class MenuScreenView extends StatelessWidget {
                     Icon(
                       Icons.error_outline,
                       size: 80,
-                      color: Color(0xff19335A).withOpacity(0.3),
+                      color: const Color(0xff19335A).withValues(alpha: 0.3),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -114,7 +114,7 @@ class MenuScreenView extends StatelessWidget {
                       style: GoogleFonts.lato(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xff19335A),
+                        color: const Color(0xff19335A),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -124,7 +124,7 @@ class MenuScreenView extends StatelessWidget {
                         state.message,
                         style: GoogleFonts.lato(
                           fontSize: 14,
-                          color: Color(0xff19335A).withOpacity(0.6),
+                          color: const Color(0xff19335A).withValues(alpha: 0.6),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -134,8 +134,8 @@ class MenuScreenView extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Color(0xff19335A),
-                            Color(0xff19335A).withOpacity(0.8),
+                            const Color(0xff19335A),
+                            const Color(0xff19335A).withValues(alpha: 0.8),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -143,9 +143,9 @@ class MenuScreenView extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xff19335A).withOpacity(0.3),
+                            color: const Color(0xff19335A).withValues(alpha: 0.3),
                             blurRadius: 8,
-                            offset: Offset(0, 2),
+                            offset: const Offset(0, 2),
                             spreadRadius: 0,
                           ),
                         ],
@@ -160,7 +160,7 @@ class MenuScreenView extends StatelessWidget {
                           },
                           borderRadius: BorderRadius.circular(12),
                           child: Padding(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                                 horizontal: 24, vertical: 12),
                             child: Text(
                               'Retry',
@@ -192,7 +192,7 @@ class MenuScreenView extends StatelessWidget {
                       Icon(
                         Icons.inventory_2_outlined,
                         size: 80,
-                        color: Color(0xff19335A).withOpacity(0.3),
+                        color: const Color(0xff19335A).withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -200,7 +200,7 @@ class MenuScreenView extends StatelessWidget {
                         style: GoogleFonts.lato(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xff19335A),
+                          color: const Color(0xff19335A),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -208,7 +208,7 @@ class MenuScreenView extends StatelessWidget {
                         'You don\'t have any transactions yet.',
                         style: GoogleFonts.lato(
                           fontSize: 14,
-                          color: Color(0xff19335A).withOpacity(0.6),
+                          color: const Color(0xff19335A).withValues(alpha: 0.6),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -217,7 +217,7 @@ class MenuScreenView extends StatelessWidget {
                         'Pull to refresh',
                         style: GoogleFonts.lato(
                           fontSize: 12,
-                          color: Color(0xff19335A).withOpacity(0.4),
+                          color: const Color(0xff19335A).withValues(alpha: 0.4),
                         ),
                       ),
                     ],
@@ -253,7 +253,7 @@ class MenuScreenView extends StatelessWidget {
                         top: 0,
                         left: 0,
                         right: 0,
-                        child: Container(
+                        child: SizedBox(
                           height: 4,
                           child: const LinearProgressIndicator(
                             backgroundColor: Colors.transparent,
@@ -303,13 +303,13 @@ class _TransactionCard extends StatelessWidget {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 offset: const Offset(0, 4),
                 blurRadius: 12,
                 spreadRadius: 0,
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 offset: const Offset(0, 2),
                 blurRadius: 4,
                 spreadRadius: 0,
@@ -317,7 +317,7 @@ class _TransactionCard extends StatelessWidget {
             ],
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Color(0xff19335A).withOpacity(0.1),
+              color: const Color(0xff19335A).withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -335,17 +335,17 @@ class _TransactionCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Color(0xff19335A).withOpacity(0.1),
+                        color: const Color(0xff19335A).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Color(0xff19335A).withOpacity(0.2),
+                          color: const Color(0xff19335A).withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
                       child: Text(
                         component,
                         style: GoogleFonts.lato(
-                          color: Color(0xff19335A),
+                          color: const Color(0xff19335A),
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -358,10 +358,10 @@ class _TransactionCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
+                                color: Colors.orange.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: Colors.orange.withOpacity(0.3),
+                                  color: Colors.orange.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -385,14 +385,14 @@ class _TransactionCard extends StatelessWidget {
                     Icon(
                       Icons.person_outline,
                       size: 18,
-                      color: Color(0xff19335A).withOpacity(0.7),
+                      color: const Color(0xff19335A).withValues(alpha: 0.7),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         transaction.memberName,
                         style: GoogleFonts.lato(
-                          color: Color(0xff19335A),
+                          color: const Color(0xff19335A),
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
                         ),
@@ -412,7 +412,7 @@ class _TransactionCard extends StatelessWidget {
                           Icon(
                             Icons.calendar_today_outlined,
                             size: 16,
-                            color: Color(0xff19335A).withOpacity(0.6),
+                            color: const Color(0xff19335A).withValues(alpha: 0.6),
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -422,14 +422,14 @@ class _TransactionCard extends StatelessWidget {
                                 Text(
                                   'Issued',
                                   style: GoogleFonts.lato(
-                                    color: Color(0xff19335A).withOpacity(0.6),
+                                    color: const Color(0xff19335A).withValues(alpha: 0.6),
                                     fontSize: 12,
                                   ),
                                 ),
                                 Text(
                                   transaction.issueDate,
                                   style: GoogleFonts.lato(
-                                    color: Color(0xff19335A),
+                                    color: const Color(0xff19335A),
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
                                   ),
@@ -464,7 +464,7 @@ class _TransactionCard extends StatelessWidget {
                                 Text(
                                   'Return',
                                   style: GoogleFonts.lato(
-                                    color: Color(0xff19335A).withOpacity(0.6),
+                                    color: const Color(0xff19335A).withValues(alpha: 0.6),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -497,14 +497,14 @@ class _TransactionCard extends StatelessWidget {
                     Icon(
                       Icons.receipt_outlined,
                       size: 16,
-                      color: Color(0xff19335A).withOpacity(0.6),
+                      color: const Color(0xff19335A).withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'ID: ${transaction.transactionId}',
                         style: GoogleFonts.lato(
-                          color: Color(0xff19335A).withOpacity(0.7),
+                          color: const Color(0xff19335A).withValues(alpha: 0.7),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),

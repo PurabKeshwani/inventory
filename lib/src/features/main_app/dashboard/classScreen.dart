@@ -260,16 +260,16 @@ class _ClassscreenState extends State<Classscreen> {
       appBar: AppBar(
         leading: Theme(
           data: Theme.of(context).copyWith(
-            iconTheme: IconThemeData(color: Colors.black54),
+            iconTheme: const IconThemeData(color: Colors.black54),
           ),
           child: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () {
               Navigator.pop(context);
             },
           ),
         ),
-        backgroundColor: Color(0xffC5E3FF),
+        backgroundColor: const Color(0xffC5E3FF),
         title: Text(
           widget.title,
           style: GoogleFonts.lato(color: Colors.black),
@@ -290,7 +290,7 @@ class _ClassscreenState extends State<Classscreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15),
           child: isLoading
-              ? Center(
+              ? const Center(
                   child: CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                   ),

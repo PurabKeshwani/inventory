@@ -39,7 +39,7 @@ class _CartscreenState extends State<Cartscreen> {
 
   var month;
 
-  final uuid = Uuid().v4();
+  final uuid = const Uuid().v4();
 
   Future<void> updateQuantity(Cartcomponent component) async {
     componentcontroller.skuidanalyze(component.skuid);
@@ -86,7 +86,7 @@ class _CartscreenState extends State<Cartscreen> {
     int day = taarikh.day;
     int year = taarikh.year;
 
-    String aslitaarikh = '${day}/${month}/${year}';
+    String aslitaarikh = '$day/$month/$year';
 
     return aslitaarikh;
   }
@@ -167,7 +167,7 @@ class _CartscreenState extends State<Cartscreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        content: Container(
+        content: SizedBox(
           height: 300,
           width: 300,
           child: MobileScanner(
@@ -293,9 +293,9 @@ class _CartscreenState extends State<Cartscreen> {
         children: [
           // Table Header
           Container(
-            decoration: BoxDecoration(
-              color: const Color(0xff19335A),
-              borderRadius: const BorderRadius.only(
+            decoration: const BoxDecoration(
+              color: Color(0xff19335A),
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
               ),
@@ -333,7 +333,7 @@ class _CartscreenState extends State<Cartscreen> {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -359,7 +359,7 @@ class _CartscreenState extends State<Cartscreen> {
       padding: const EdgeInsets.fromLTRB(2, 12, 2, 12),
       child: Text(
         text,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
           color: Colors.black87,
         ),

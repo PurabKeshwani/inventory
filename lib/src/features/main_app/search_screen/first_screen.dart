@@ -4,7 +4,7 @@ import 'package:inventory/src/features/main_app/search_screen/member_search_scre
 import 'package:inventory/src/features/main_app/search_screen/search_screen.dart';
 
 class FirstScreen extends StatefulWidget {
-  const FirstScreen({Key? key}) : super(key: key);
+  const FirstScreen({super.key});
 
   @override
   State<FirstScreen> createState() => _FirstScreenState();
@@ -83,7 +83,7 @@ class _FirstScreenState extends State<FirstScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.4),
+              color: Colors.blue.withValues(alpha: 0.4),
               offset: const Offset(2, 4),
               blurRadius: 8,
             ),

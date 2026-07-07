@@ -12,14 +12,14 @@ class WelcomeScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Text("Welcome to the app"),
-          SizedBox(
+          const SizedBox(
             height: 100,
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               OutlinedButton(onPressed: () {}, child: const Text("Login")),
-              SizedBox(
+              const SizedBox(
                 width: 20,
               ),
               ElevatedButton(onPressed: () {}, child: const Text("SignUp"))

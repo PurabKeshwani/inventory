@@ -5,6 +5,8 @@ import 'package:inventory/src/features/main_app/add_component/add_component_bott
 import 'package:inventory/src/features/main_app/add_component/add_component_bottom_pop_up.dart';
 
 class Chooseoption extends StatelessWidget {
+  const Chooseoption({super.key});
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -54,7 +56,7 @@ class Chooseoption extends StatelessWidget {
                           width: 35,
                           height: 35,
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Text(
                           'Add Non-Consumable component',
                           style: GoogleFonts.lato(
@@ -98,7 +100,7 @@ class Chooseoption extends StatelessWidget {
                         width: 35,
                         height: 35,
                       ),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 10),
                       Text(
                         'Add Consumable component',
                         style: GoogleFonts.lato(

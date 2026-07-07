@@ -8,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ClassContainer extends StatefulWidget {
   final String label;
 
-  const ClassContainer({Key? key, required this.label}) : super(key: key);
+  const ClassContainer({super.key, required this.label});
 
   @override
   State<ClassContainer> createState() => _ClassContainerState();
@@ -39,7 +39,7 @@ class _ClassContainerState extends State<ClassContainer> {
       // Fetch all components from the specific table and sum their stock
       final response = await supabase.from(tableName).select('stock');
 
-      if (response != null && response is List) {
+      if (response is List) {
         int sum = 0;
         for (var item in response) {
           if (item['stock'] != null) {
