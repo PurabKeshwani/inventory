@@ -78,9 +78,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: const Color(0xffC5E3FF),
         title: Text('My Profile', style: GoogleFonts.lato(color: Colors.black)),
       ),
-      body: Container(
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
@@ -113,11 +112,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            Padding(
+           Padding(
               padding: const EdgeInsets.only(top: 20),
               child: LogOUtWidget(),
             ),
-            const SizedBox(height: 400),
+            const SizedBox(height: 40),
           ],
         ),
       ),
