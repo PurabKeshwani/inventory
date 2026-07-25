@@ -23,7 +23,7 @@ class _NewentryState extends State<Newentry> {
   final TextEditingController boxnocontroller = TextEditingController();
   final TextEditingController stockcontroller = TextEditingController();
   bool _isLoading = false;
-
+  bool _isProcessingScan = false; // prevents duplicate onDetect firings
   @override
   void initState() {
     super.initState();
@@ -71,7 +71,9 @@ class _NewentryState extends State<Newentry> {
 
       print('DEBUG: Camera permission granted, starting scan');
 
-      if (!mounted) return;
+       if (!mounted) return;
+
+      _isProcessingScan = false; // reset guard for this new scan attempt
 
       // Show scanner in a dialog
       showDialog(
@@ -124,12 +126,14 @@ class _NewentryState extends State<Newentry> {
                 Expanded(
                   child: Stack(
                     children: [
-                      MobileScanner(
+                       MobileScanner(
                         onDetect: (capture) async {
+                          if (_isProcessingScan) return;
                           final List<Barcode> barcodes = capture.barcodes;
                           if (barcodes.isNotEmpty) {
                             final String? code = barcodes.first.rawValue;
                             if (code != null && code.isNotEmpty) {
+                              _isProcessingScan = true;
                               print('DEBUG: Barcode detected: $code');
                               // Add haptic feedback
                               HapticFeedback.mediumImpact();

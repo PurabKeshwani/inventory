@@ -21,7 +21,7 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
   final supabase = Supabase.instance.client;
   final TextEditingController boxnocontroller = TextEditingController();
   final TextEditingController stockcontroller = TextEditingController();
-
+  bool _isProcessingScan = false; // prevents duplicate onDetect firings
   Future<void> _startBarcodeScan() async {
     try {
       print('DEBUG: Starting barcode scan');
@@ -46,6 +46,8 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
       print('DEBUG: Camera permission granted, starting scan');
 
       if (!mounted) return;
+
+      _isProcessingScan = false; // reset guard for this new scan attempt
 
       // Show scanner in a dialog
       showDialog(

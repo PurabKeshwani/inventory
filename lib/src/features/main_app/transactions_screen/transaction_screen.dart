@@ -21,7 +21,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
   late String barcode;
   late String compname = '';
   bool returnstate = false;
-
+  bool _isProcessingScan = false; // prevents duplicate onDetect firings
   final ComponentController componentcontroller =
       Get.put(ComponentController());
 
@@ -221,7 +221,10 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
       print('DEBUG: Camera permission granted, starting scan');
 
-      if (!mounted) return;
+       if (!mounted) return;
+
+      _isProcessingScan = false; // reset guard for this new scan attempt
+
 
       // Show scanner in a dialog
       showDialog(
@@ -273,14 +276,16 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 Expanded(
                   child: Stack(
                     children: [
-                      MobileScanner(
+                        MobileScanner(
                         onDetect: (capture) {
+                          if (_isProcessingScan) return;
                           final List<Barcode> barcodes = capture.barcodes;
                           if (barcodes.isNotEmpty) {
                             final String? code = barcodes.first.rawValue;
                             if (code != null) {
                               final String normalized = code.trim();
                               if (normalized.isEmpty) return;
+                              _isProcessingScan = true;
                               print('DEBUG: Barcode detected: $normalized');
                               Navigator.pop(context); // Close scanner
                               _processBarcode(normalized);
