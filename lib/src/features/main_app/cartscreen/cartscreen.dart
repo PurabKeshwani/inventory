@@ -47,12 +47,19 @@ class _CartscreenState extends State<Cartscreen> {
         .from(componentcontroller.ClassName.value)
         .select('stock')
         .eq('skuid', component.skuid);
-    final stockvalue = tablestock[0]['stock'] as int;
-    final finalstock = stockvalue - component.Quantity;
+      final stockvalue = tablestock[0]['stock'] as int;
 
-    await supabase
-        .from(componentcontroller.ClassName.value)
-        .update({'stock': finalstock}).eq('skuid', component.skuid);
+if (stockvalue <= 0) {
+  return;
+}
+
+final finalstock =
+    (stockvalue - component.Quantity).clamp(0, 999999);
+
+await supabase
+    .from(componentcontroller.ClassName.value)
+    .update({'stock': finalstock})
+    .eq('skuid', component.skuid);
   }
 
   void scheduleNotification(DateTime scheduledDate) async {
@@ -103,15 +110,19 @@ class _CartscreenState extends State<Cartscreen> {
       return;
     }
 
-    final stockvalue = tablestock[0]['stock'] as int;
-    final finalstock = stockvalue + component.Quantity;
+      final stockvalue = tablestock[0]['stock'] as int;
+final finalstock = stockvalue - component.Quantity;
 
-    print('transaction id:');
-    print(componentcontroller.transactionid.value);
-    await supabase
-        .from(componentcontroller.ClassName.value)
-        .update({'stock': finalstock}).eq('skuid', component.skuid);
+await supabase
+    .from(componentcontroller.ClassName.value)
+    .update({'stock': finalstock})
+    .eq('skuid', component.skuid);
 
+await Future.delayed(
+  const Duration(milliseconds: 200),
+);
+     
+     
     await supabase.from('Transactions').update({'status': 'Returned'}).eq(
         'transaction_id', componentcontroller.transactionid.value);
 

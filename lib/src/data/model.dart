@@ -3,15 +3,19 @@ class Component {
   final String name;
   final String boxNo;
   final int stock;
+  final int availableStock;
+  final int issuedStock;
   final int? warning;
 
   Component({
-    this.skuId,
-    required this.name,
-    required this.boxNo,
-    required this.stock,
-    this.warning,
-  });
+  this.skuId,
+  required this.name,
+  required this.boxNo,
+  required this.stock,
+  this.availableStock = 0,
+  this.issuedStock = 0,
+  this.warning,
+});
 
   // Factory constructor to create Component from Supabase JSON
   factory Component.fromJson(Map<String, dynamic> json) {
