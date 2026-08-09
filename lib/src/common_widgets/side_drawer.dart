@@ -3,6 +3,7 @@ import 'package:inventory/src/common_widgets/sidebar_screens/about_screen.dart';
 import 'package:inventory/src/common_widgets/sidebar_screens/fine_policy_screen.dart';
 import 'package:inventory/src/common_widgets/sidebar_screens/guidelines_screen.dart';
 import 'package:inventory/src/features/analytics/analytics_screen.dart';
+import 'package:inventory/src/features/bulk_upload/bulk_upload_screen.dart';
 // import 'package:inventory/src/constants/image_strings.dart';
 
 class CustomSideDrawer extends StatelessWidget {
@@ -58,6 +59,23 @@ class CustomSideDrawer extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const AnalyticsScreen(),
+      ),
+    );
+  },
+),
+            ListTile(
+  leading: const Icon(
+    Icons.upload_file_rounded,
+    color: Colors.black87,
+  ),
+  title: const Text(
+    'Bulk Upload Inventory',
+    style: TextStyle(color: Colors.black),
+  ),
+  onTap: () {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const BulkUploadScreen(),
       ),
     );
   },

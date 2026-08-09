@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'services/analytics_service.dart';
 import 'models/analytics_models.dart';
+import 'utils/csv_export_util.dart';
 
 const _navy = Color(0xff19335A);
 const _accent = Color(0xff0845BB);
@@ -17,6 +18,8 @@ class AnalyticsScreen extends StatefulWidget {
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   final AnalyticsService _service = AnalyticsService();
   late Future<AnalyticsSummary> _future;
+  AnalyticsSummary? _loadedSummary;
+  bool _isExporting = false;
 
   @override
   void initState() {
@@ -29,6 +32,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       _future = _service.loadLast30DaysSummary();
     });
     await _future;
+  }
+
+  Future<void> _exportCsv() async {
+    if (_loadedSummary == null || _isExporting) return;
+    setState(() => _isExporting = true);
+    try {
+      await CsvExportUtil.exportSummary(_loadedSummary!);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
   }
 
   @override
@@ -45,6 +64,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: _isExporting
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.download_rounded, color: Colors.white),
+            tooltip: 'Export as CSV',
+            onPressed: _loadedSummary == null ? null : _exportCsv,
+          ),
+        ],
       ),
       body: FutureBuilder<AnalyticsSummary>(
         future: _future,
@@ -66,6 +98,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           }
 
           final data = snapshot.data!;
+          if (_loadedSummary != data) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _loadedSummary = data);
+            });
+          }
           return RefreshIndicator(
             onRefresh: _refresh,
             color: _navy,
