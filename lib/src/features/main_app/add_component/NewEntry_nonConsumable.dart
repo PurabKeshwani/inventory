@@ -18,7 +18,7 @@ class _NewentryState extends State<Newentry> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController barcodecontroller = TextEditingController();
   final ComponentController componentcontroller =
-      Get.put(ComponentController());
+      Get.find<ComponentController>();
   final supabase = Supabase.instance.client;
   final TextEditingController boxnocontroller = TextEditingController();
   final TextEditingController stockcontroller = TextEditingController();

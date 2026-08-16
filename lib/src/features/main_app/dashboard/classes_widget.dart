@@ -16,7 +16,7 @@ class ClassContainer extends StatefulWidget {
 
 class _ClassContainerState extends State<ClassContainer> {
   final ComponentController componentController =
-      Get.put(ComponentController());
+      Get.find<ComponentController>();
   final supabase = Supabase.instance.client;
   int totalStock = 0;
   bool isLoading = true;

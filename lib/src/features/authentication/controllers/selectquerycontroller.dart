@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Selectquerycontroller extends GetxController {
   final supabase = Supabase.instance.client;
-  final ComponentController componentControl = Get.put(ComponentController());
+  final ComponentController componentControl = Get.find<ComponentController>();
   RxList<Outputcomponent> newres = <Outputcomponent>[].obs;
 
   void fetchComponents(compname) async {

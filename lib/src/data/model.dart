@@ -21,8 +21,8 @@ class Component {
   factory Component.fromJson(Map<String, dynamic> json) {
     return Component(
       skuId: json['skuid'] as String?,
-      name: json['name'] as String,
-      boxNo: json['boxno'] as String,
+      name: json['name'] as String? ?? 'Unknown Component',
+      boxNo: json['boxno'] as String? ?? 'Not Assigned',
       stock: _parseToInt(json['stock']),
       warning: _parseToIntNullable(json['warning']),
     );

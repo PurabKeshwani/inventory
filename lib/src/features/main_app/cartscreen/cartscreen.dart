@@ -29,7 +29,7 @@ class _CartscreenState extends State<Cartscreen> {
   bool _isLoading = false;
 
   final ComponentController componentcontroller =
-      Get.put(ComponentController());
+      Get.find<ComponentController>();
 
   final Emailcontroller emailcontroller = Get.put(Emailcontroller());
 
@@ -423,7 +423,7 @@ await Future.delayed(
   @override
   Widget build(BuildContext context) {
     final ComponentController componentcontroller =
-        Get.put(ComponentController());
+        Get.find<ComponentController>();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xff19335A),

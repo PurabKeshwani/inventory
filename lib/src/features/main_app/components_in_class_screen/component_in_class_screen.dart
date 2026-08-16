@@ -18,7 +18,7 @@ class ComponentInClassScreen extends StatefulWidget {
 
 class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
   final supabase = Supabase.instance.client;
-  final ComponentController componentControl = Get.put(ComponentController());
+  final ComponentController componentControl = Get.find<ComponentController>();
   final Selectquerycontroller selectquerycontroller =
       Get.put(Selectquerycontroller());
   final TextEditingController warningController = TextEditingController();

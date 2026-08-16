@@ -23,7 +23,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
   bool returnstate = false;
   bool _isProcessingScan = false; // prevents duplicate onDetect firings
   final ComponentController componentcontroller =
-      Get.put(ComponentController());
+      Get.find<ComponentController>();
 
   final transactionidcontroller = TextEditingController();
   final returnTransactionIdController = TextEditingController();
