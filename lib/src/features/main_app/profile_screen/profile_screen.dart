@@ -18,7 +18,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _supabase = Supabase.instance.client;
-  final Emailcontroller emailGet = Get.find<Emailcontroller>();
+  late final Emailcontroller emailGet;
   File? _image;
   final ImagePicker _picker = ImagePicker();
   bool _isDarkMode = false;
@@ -26,6 +26,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    emailGet = Get.isRegistered<Emailcontroller>()
+        ? Get.find<Emailcontroller>()
+        : Get.put(Emailcontroller());
     naamkaran();
     _loadImage();
     _loadThemePreference();
@@ -147,15 +150,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         GestureDetector(
                           onTap: _pickImage,
-                          child: CircleAvatar(
-                            radius: 54,
-                            backgroundColor: Colors.white.withValues(alpha: 0.2),
-                            child: CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.white,
-                              backgroundImage: _image != null
-                                  ? FileImage(_image!) as ImageProvider
-                                  : const AssetImage("assets/logo/ISA-Header-(LogoOnly)"),
+                          child: Container(
+                            width: 104,
+                            height: 104,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 3,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: _image != null
+                                  ? Image.file(
+                                      _image!,
+                                      width: 104,
+                                      height: 104,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.person_rounded,
+                                        size: 54,
+                                        color: Color(0xff19335A),
+                                      ),
+                                    )
+                                  : Image.asset(
+                                      "assets/images/isa-vesit-color-logo.png",
+                                      width: 104,
+                                      height: 104,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.person_rounded,
+                                        size: 54,
+                                        color: Color(0xff19335A),
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
@@ -252,33 +288,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // Dark Mode Switch Tile
                     Container(
                       decoration: CAppTheme.cardDecoration(context, radius: 14),
-                      child: SwitchListTile(
-                        value: _isDarkMode,
-                        onChanged: _toggleDarkMode,
-                        activeThumbColor: accentColor,
-                        secondary: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: accentColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: SwitchListTile(
+                          value: _isDarkMode,
+                          onChanged: _toggleDarkMode,
+                          activeThumbColor: accentColor,
+                          secondary: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: accentColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              _isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                              color: accentColor,
+                              size: 20,
+                            ),
                           ),
-                          child: Icon(
-                            _isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                            color: accentColor,
-                            size: 20,
+                          title: Text(
+                            'Dark Theme Mode',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: primaryText,
+                            ),
                           ),
-                        ),
-                        title: Text(
-                          'Dark Theme Mode',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: primaryText,
+                          subtitle: Text(
+                            _isDarkMode ? 'Dark UI theme active' : 'Light UI theme active',
+                            style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
                           ),
-                        ),
-                        subtitle: Text(
-                          _isDarkMode ? 'Dark UI theme active' : 'Light UI theme active',
-                          style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
                         ),
                       ),
                     ),

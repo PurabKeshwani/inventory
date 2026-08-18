@@ -203,7 +203,7 @@ class _FineReceiptDialogState extends State<FineReceiptDialog> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'ISA-VESIT Inventorium',
+                                    'ISA VESIT INVENTORY',
                                     style: GoogleFonts.montserrat(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,

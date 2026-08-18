@@ -87,11 +87,12 @@ class AboutPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'ISA-VESIT Inventorium',
+                                'ISA VESIT INVENTORY',
                                 style: GoogleFonts.montserrat(
                                   color: Colors.white,
-                                  fontSize: 17,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                               Text(

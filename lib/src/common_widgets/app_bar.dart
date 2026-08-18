@@ -40,11 +40,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            'ISA-VESIT',
+            'ISA VESIT INVENTORY',
             style: GoogleFonts.montserrat(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 16,
               letterSpacing: 0.5,
             ),
           ),

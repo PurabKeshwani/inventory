@@ -60,6 +60,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      title: 'ISA VESIT INVENTORY',
       debugShowCheckedModeBanner: false,
       theme: CAppTheme.lightTheme,
       darkTheme: CAppTheme.darkTheme,

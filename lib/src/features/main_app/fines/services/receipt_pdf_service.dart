@@ -97,11 +97,11 @@ class ReceiptPdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        'ISA-VESIT Inventorium',
+                        'ISA VESIT INVENTORY',
                         style: pw.TextStyle(
                           font: fontBold,
-                          fontSize: 16,
-                          color: PdfColor.fromHex('#19335A'),
+                          fontSize: 14,
+                          color: PdfColor.fromHex('#0F172A'),
                         ),
                       ),
                       pw.SizedBox(height: 4),

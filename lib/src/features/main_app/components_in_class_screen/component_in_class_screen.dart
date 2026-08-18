@@ -33,6 +33,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
   final TextEditingController warningController = TextEditingController();
   final TextEditingController searchController = TextEditingController();
   String _filterStatus = 'all'; // 'all', 'available', 'issued'
+  bool _isTableView = false; // Card view is default for responsive mobile display
 
   @override
   void initState() {
@@ -731,23 +732,65 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                         ),
                         const SizedBox(height: 14),
 
-                        // Table Header Info
+                        // Header & View Toggle
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Components & Inventory Units',
+                              'Inventory Units (${displayedItems.length})',
                               style: GoogleFonts.montserrat(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 color: primaryText,
                               ),
                             ),
-                            Text(
-                              'Tap row to view barcode',
-                              style: GoogleFonts.lato(
-                                fontSize: 11,
-                                color: secondaryText,
+                            Container(
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xff1E293B) : Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.grid_view_rounded,
+                                      size: 18,
+                                      color: !_isTableView ? accentColor : secondaryText,
+                                    ),
+                                    tooltip: 'Card View (Mobile)',
+                                    constraints: const BoxConstraints(),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    onPressed: () {
+                                      setState(() {
+                                        _isTableView = false;
+                                      });
+                                    },
+                                  ),
+                                  Container(
+                                    height: 16,
+                                    width: 1,
+                                    color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.table_rows_rounded,
+                                      size: 18,
+                                      color: _isTableView ? accentColor : secondaryText,
+                                    ),
+                                    tooltip: 'Table View',
+                                    constraints: const BoxConstraints(),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    onPressed: () {
+                                      setState(() {
+                                        _isTableView = true;
+                                      });
+                                    },
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -789,7 +832,22 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                       ),
                     ),
                   )
+                else if (!_isTableView)
+                  // Card View (Default for Mobile Responsiveness)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final item = displayedItems[index];
+                          return _buildComponentUnitCard(item);
+                        },
+                        childCount: displayedItems.length,
+                      ),
+                    ),
+                  )
                 else
+                  // Table View (Spreadsheet format)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -876,13 +934,13 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                                             horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: isAvailable
-                                              ? (isDark ? Colors.green.withOpacity(0.2) : Colors.green[50])
-                                              : (isDark ? Colors.red.withOpacity(0.2) : Colors.red[50]),
+                                              ? (isDark ? Colors.green.withValues(alpha: 0.2) : Colors.green[50])
+                                              : (isDark ? Colors.red.withValues(alpha: 0.2) : Colors.red[50]),
                                           borderRadius: BorderRadius.circular(20),
                                           border: Border.all(
                                             color: isAvailable
-                                                ? (isDark ? Colors.green.withOpacity(0.4) : Colors.green)
-                                                : (isDark ? Colors.red.withOpacity(0.4) : Colors.red),
+                                                ? (isDark ? Colors.green.withValues(alpha: 0.4) : Colors.green)
+                                                : (isDark ? Colors.red.withValues(alpha: 0.4) : Colors.red),
                                             width: 1,
                                           ),
                                         ),
@@ -1058,6 +1116,239 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildComponentUnitCard(Outputcomponent item) {
+    final isAvailable = item.stock > 0;
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: CAppTheme.cardDecoration(context, radius: 14),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showBarcodeDialog(item),
+          onLongPress: () => _showComponentActionsBottomSheet(item),
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Row: SKU Badge + Status Pill
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.qr_code_2_rounded, size: 18, color: accentColor),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          item.skuid,
+                          style: GoogleFonts.sourceCodePro(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: primaryText,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isAvailable
+                            ? (isDark ? Colors.green.withValues(alpha: 0.2) : Colors.green[50])
+                            : (isDark ? Colors.red.withValues(alpha: 0.2) : Colors.red[50]),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isAvailable
+                              ? (isDark ? Colors.green.withValues(alpha: 0.4) : Colors.green)
+                              : (isDark ? Colors.red.withValues(alpha: 0.4) : Colors.red),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isAvailable ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                            size: 13,
+                            color: isAvailable
+                                ? (isDark ? const Color(0xff4ADE80) : Colors.green[700])
+                                : (isDark ? const Color(0xffF87171) : Colors.red[700]),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isAvailable ? 'Available' : 'Issued',
+                            style: GoogleFonts.lato(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isAvailable
+                                  ? (isDark ? const Color(0xff4ADE80) : Colors.green[800])
+                                  : (isDark ? const Color(0xffF87171) : Colors.red[800]),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+                Divider(height: 1, color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4)),
+                const SizedBox(height: 10),
+
+                // Middle Row: Box No & Stock Count
+                Row(
+                  children: [
+                    // Box No
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xff0F172A) : const Color(0xffF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.inventory_2_outlined, size: 14, color: secondaryText),
+                          const SizedBox(width: 5),
+                          Text(
+                            'Box: ${item.boxNo}',
+                            style: GoogleFonts.lato(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: primaryText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Stock Count
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xff0F172A) : const Color(0xffF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4)),
+                      ),
+                      child: Text(
+                        'Stock: ${item.stock}',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isAvailable ? (isDark ? const Color(0xff4ADE80) : Colors.green[700]) : (isDark ? const Color(0xffF87171) : Colors.red[700]),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Warning / Note if present
+                if (item.warning != null && item.warning.toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: isDark ? 0.15 : 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.withValues(alpha: isDark ? 0.3 : 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, size: 15, color: Colors.orange),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            item.warning.toString(),
+                            style: GoogleFonts.lato(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? const Color(0xffFDBA74) : Colors.orange[900],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 10),
+
+                // Actions Footer: Quick View Barcode + Edit + Delete buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // View Barcode Button
+                    InkWell(
+                      onTap: () => _showBarcodeDialog(item),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.qr_code_rounded, size: 16, color: accentColor),
+                            const SizedBox(width: 6),
+                            Text(
+                              'View Barcode',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: accentColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Actions
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit_outlined, size: 18, color: secondaryText),
+                          tooltip: 'Edit Component',
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(6),
+                          onPressed: () => _showEditFullComponentDialog(item),
+                        ),
+                        const SizedBox(width: 6),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                          tooltip: 'Delete Component',
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(6),
+                          onPressed: () => _confirmDeleteComponent(item),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

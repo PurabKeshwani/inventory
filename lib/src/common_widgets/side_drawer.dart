@@ -74,11 +74,12 @@ class CustomSideDrawer extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'ISA-VESIT Inventorium',
+                  'ISA VESIT INVENTORY',
                   style: GoogleFonts.montserrat(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 Text(
