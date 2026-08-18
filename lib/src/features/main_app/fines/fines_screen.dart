@@ -2229,7 +2229,7 @@ class _FinesScreenState extends State<FinesScreen> {
                           if (fine.phoneNumber != null &&
                               fine.phoneNumber!.isNotEmpty)
                             Text(
-                              '📱 ${fine.phoneNumber}',
+                              'Phone: ${fine.phoneNumber}',
                               style: GoogleFonts.lato(
                                 fontSize: 12,
                                 color: secondaryText,

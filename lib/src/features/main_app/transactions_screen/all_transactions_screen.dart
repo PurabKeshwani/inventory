@@ -804,7 +804,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
                 ),
                 if (phone.isNotEmpty)
                   Text(
-                    '📞 $phone',
+                    'Phone: $phone',
                     style: GoogleFonts.lato(fontSize: 12, color: Colors.grey[700]),
                   ),
               ],

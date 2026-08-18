@@ -483,17 +483,56 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
       final newStock = int.tryParse(stockController.text.trim()) ?? item.stock;
       final newNote = noteController.text.trim();
 
-      final tableName = _tableName;
+      String targetTable = _tableName;
+      if (targetTable.isEmpty) {
+        targetTable = widget.category ?? componentControl.ClassName.value;
+      }
+
       try {
-        await supabase.from(tableName).update({
-          'boxNo': newBox,
+        if (targetTable.isEmpty) {
+          for (final tbl in Selectquerycontroller.allCategoryTables) {
+            final check = await supabase.from(tbl).select('skuid').eq('skuid', item.skuid).maybeSingle();
+            if (check != null) {
+              targetTable = tbl;
+              break;
+            }
+          }
+        }
+
+        if (targetTable.isEmpty) {
+          throw Exception('Could not determine category table for component ${item.skuid}');
+        }
+
+        final updatePayload = <String, dynamic>{
+          'boxno': newBox,
           'stock': newStock,
-          'warning': newNote,
-        }).eq('skuid', item.skuid);
+        };
+
+        if (newNote.isNotEmpty) {
+          final intVal = int.tryParse(newNote);
+          updatePayload['warning'] = intVal ?? newNote;
+        } else {
+          updatePayload['warning'] = null;
+        }
+
+        try {
+          await supabase.from(targetTable).update(updatePayload).eq('skuid', item.skuid);
+        } catch (err) {
+          if (updatePayload.containsKey('warning') && updatePayload['warning'] is String) {
+            updatePayload['warning'] = int.tryParse(newNote);
+          }
+          try {
+            await supabase.from(targetTable).update(updatePayload).eq('skuid', item.skuid);
+          } catch (_) {
+            updatePayload['boxNo'] = newBox;
+            updatePayload.remove('boxno');
+            await supabase.from(targetTable).update(updatePayload).eq('skuid', item.skuid);
+          }
+        }
 
         // Invalidate cache
         try {
-          Get.find<CacheController>().invalidate(tableName);
+          Get.find<CacheController>().invalidate(targetTable);
         } catch (_) {}
 
         await _refreshData();
@@ -502,7 +541,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Component updated successfully!'),
-              backgroundColor: Colors.green,
+              backgroundColor: Color(0xff15803D),
             ),
           );
         }
@@ -511,7 +550,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to update component: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: Colors.red[700],
             ),
           );
         }
@@ -555,13 +594,30 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
     );
 
     if (confirmed == true) {
-      final tableName = _tableName;
+      String targetTable = _tableName;
+      if (targetTable.isEmpty) {
+        targetTable = widget.category ?? componentControl.ClassName.value;
+      }
       try {
-        await supabase.from(tableName).delete().eq('skuid', item.skuid);
+        if (targetTable.isEmpty) {
+          for (final tbl in Selectquerycontroller.allCategoryTables) {
+            final check = await supabase.from(tbl).select('skuid').eq('skuid', item.skuid).maybeSingle();
+            if (check != null) {
+              targetTable = tbl;
+              break;
+            }
+          }
+        }
+
+        if (targetTable.isEmpty) {
+          throw Exception('Could not determine category table for component ${item.skuid}');
+        }
+
+        await supabase.from(targetTable).delete().eq('skuid', item.skuid);
 
         // Invalidate cache
         try {
-          Get.find<CacheController>().invalidate(tableName);
+          Get.find<CacheController>().invalidate(targetTable);
         } catch (_) {}
 
         await _refreshData();
@@ -579,7 +635,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to delete component: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: Colors.red[700],
             ),
           );
         }

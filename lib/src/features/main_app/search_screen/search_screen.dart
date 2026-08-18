@@ -397,29 +397,6 @@ class _SearchScreenState extends State<SearchScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             decoration: CAppTheme.cardDecoration(context, radius: 14),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => ComponentInClassScreen(component: component),
-                                  ),
-                                );
-                              },
-                              title: Text(
-                                component.name,
-                                style: GoogleFonts.montserrat(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: primaryText,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
