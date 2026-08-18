@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:inventory/src/data/Cartcomponent.dart';
+import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/data/model.dart';
 import 'package:inventory/src/features/authentication/controllers/emailcontroller.dart';
 import 'package:inventory/src/features/main_app/fines/models/fine_model.dart';
@@ -108,17 +108,19 @@ void main() {
         name: 'Servo Motor SG90',
         boxNo: 'AM-01',
         stock: 12,
-        isIssued: false,
-        skuid: 'AM01-05',
-        warning: 'Handle gear with care',
+        availableStock: 10,
+        issuedStock: 2,
+        skuId: 'AM01-05',
+        warning: 1,
       );
 
       expect(comp.name, 'Servo Motor SG90');
       expect(comp.boxNo, 'AM-01');
       expect(comp.stock, 12);
-      expect(comp.isIssued, isFalse);
-      expect(comp.skuid, 'AM01-05');
-      expect(comp.warning, 'Handle gear with care');
+      expect(comp.availableStock, 10);
+      expect(comp.issuedStock, 2);
+      expect(comp.skuId, 'AM01-05');
+      expect(comp.warning, 1);
     });
   });
 

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:inventory/src/data/Cartcomponent.dart';
+import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/data/model.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/main_app/components_in_class_screen/component_in_class_screen.dart';

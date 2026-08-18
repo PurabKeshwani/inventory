@@ -206,15 +206,6 @@ class ReceiptPdfService {
                             color: PdfColor.fromHex('#4A5568'),
                           ),
                         ),
-                      if (fine.phoneNumber != null && fine.phoneNumber!.isNotEmpty)
-                        pw.Text(
-                          'Phone: ${fine.phoneNumber}',
-                          style: pw.TextStyle(
-                            font: fontRegular,
-                            fontSize: 10,
-                            color: PdfColor.fromHex('#4A5568'),
-                          ),
-                        ),
                       if (fine.memberEmail != null && fine.memberEmail!.isNotEmpty)
                         pw.Text(
                           'Email: ${fine.memberEmail}',

@@ -317,14 +317,6 @@ class _FineReceiptDialogState extends State<FineReceiptDialog> {
                                         color: Colors.grey[700],
                                       ),
                                     ),
-                                  if (fine.phoneNumber != null && fine.phoneNumber!.isNotEmpty)
-                                    Text(
-                                      'Phone: ${fine.phoneNumber}',
-                                      style: GoogleFonts.lato(
-                                        fontSize: 12,
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
                                   if (fine.memberEmail != null && fine.memberEmail!.isNotEmpty)
                                     Text(
                                       'Email: ${fine.memberEmail}',
