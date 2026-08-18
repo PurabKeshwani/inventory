@@ -325,50 +325,59 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
               const SizedBox(height: 8),
 
               // Option 1: View Barcode
-              ListTile(
-                leading: const Icon(Icons.qr_code_2_rounded,
-                    color: Color(0xff19335A)),
-                title: Text('View Barcode',
-                    style: GoogleFonts.montserrat(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
-                subtitle: Text('Show, copy or download barcode image',
-                    style: GoogleFonts.lato(fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showBarcodeDialog(item);
-                },
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: const Icon(Icons.qr_code_2_rounded,
+                      color: Color(0xff19335A)),
+                  title: Text('View Barcode',
+                      style: GoogleFonts.montserrat(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  subtitle: Text('Show, copy or download barcode image',
+                      style: GoogleFonts.lato(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showBarcodeDialog(item);
+                  },
+                ),
               ),
 
               // Option 2: Edit Component
-              ListTile(
-                leading: const Icon(Icons.edit_note_rounded,
-                    color: Color(0xff0845BB)),
-                title: Text('Edit Component',
-                    style: GoogleFonts.montserrat(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
-                subtitle: Text('Change box number, stock quantity, or notes',
-                    style: GoogleFonts.lato(fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showEditFullComponentDialog(item);
-                },
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: const Icon(Icons.edit_note_rounded,
+                      color: Color(0xff0845BB)),
+                  title: Text('Edit Component',
+                      style: GoogleFonts.montserrat(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  subtitle: Text('Change box number, stock quantity, or notes',
+                      style: GoogleFonts.lato(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showEditFullComponentDialog(item);
+                  },
+                ),
               ),
 
               // Option 3: Delete Component
-              ListTile(
-                leading:
-                    const Icon(Icons.delete_forever_rounded, color: Colors.red),
-                title: Text('Delete Component',
-                    style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.red)),
-                subtitle: Text('Permanently remove this SKU instance from inventory',
-                    style: GoogleFonts.lato(fontSize: 12, color: Colors.red[300])),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _confirmDeleteComponent(item);
-                },
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading:
+                      const Icon(Icons.delete_forever_rounded, color: Colors.red),
+                  title: Text('Delete Component',
+                      style: GoogleFonts.montserrat(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red)),
+                  subtitle: Text('Permanently remove this SKU instance from inventory',
+                      style: GoogleFonts.lato(fontSize: 12, color: Colors.red[300])),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _confirmDeleteComponent(item);
+                  },
+                ),
               ),
             ],
           ),
@@ -489,50 +498,104 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
       }
 
       try {
-        if (targetTable.isEmpty) {
+        Map<String, dynamic>? existingRow;
+        String skuColumn = 'skuid';
+        String foundTable = targetTable.isNotEmpty ? targetTable : 'Microcontroller';
+
+        // 1. Check target table first
+        if (targetTable.isNotEmpty) {
+          try {
+            final res = await supabase.from(targetTable).select().eq('skuid', item.skuid).maybeSingle();
+            if (res != null) {
+              existingRow = Map<String, dynamic>.from(res);
+              skuColumn = 'skuid';
+              foundTable = targetTable;
+            }
+          } catch (_) {
+            try {
+              final res = await supabase.from(targetTable).select().eq('skuId', item.skuid).maybeSingle();
+              if (res != null) {
+                existingRow = Map<String, dynamic>.from(res);
+                skuColumn = 'skuId';
+                foundTable = targetTable;
+              }
+            } catch (_) {}
+          }
+        }
+
+        // 2. If not found in target table, search all 7 tables
+        if (existingRow == null) {
           for (final tbl in Selectquerycontroller.allCategoryTables) {
-            final check = await supabase.from(tbl).select('skuid').eq('skuid', item.skuid).maybeSingle();
-            if (check != null) {
-              targetTable = tbl;
-              break;
+            try {
+              final res = await supabase.from(tbl).select().eq('skuid', item.skuid).maybeSingle();
+              if (res != null) {
+                existingRow = Map<String, dynamic>.from(res);
+                foundTable = tbl;
+                skuColumn = 'skuid';
+                break;
+              }
+            } catch (_) {
+              try {
+                final res = await supabase.from(tbl).select().eq('skuId', item.skuid).maybeSingle();
+                if (res != null) {
+                  existingRow = Map<String, dynamic>.from(res);
+                  foundTable = tbl;
+                  skuColumn = 'skuId';
+                  break;
+                }
+              } catch (_) {}
             }
           }
         }
 
-        if (targetTable.isEmpty) {
-          throw Exception('Could not determine category table for component ${item.skuid}');
-        }
-
         final updatePayload = <String, dynamic>{
-          'boxno': newBox,
           'stock': newStock,
         };
 
-        if (newNote.isNotEmpty) {
-          final intVal = int.tryParse(newNote);
-          updatePayload['warning'] = intVal ?? newNote;
+        if (existingRow != null && existingRow.containsKey('boxNo')) {
+          updatePayload['boxNo'] = newBox;
         } else {
-          updatePayload['warning'] = null;
+          updatePayload['boxno'] = newBox;
+        }
+
+        if (existingRow != null && existingRow.containsKey('warning')) {
+          final currentVal = existingRow['warning'];
+          if (currentVal is int || currentVal == null) {
+            updatePayload['warning'] = int.tryParse(newNote);
+          } else {
+            updatePayload['warning'] = newNote;
+          }
         }
 
         try {
-          await supabase.from(targetTable).update(updatePayload).eq('skuid', item.skuid);
+          await supabase.from(foundTable).update(updatePayload).eq(skuColumn, item.skuid);
         } catch (err) {
-          if (updatePayload.containsKey('warning') && updatePayload['warning'] is String) {
-            updatePayload['warning'] = int.tryParse(newNote);
+          // Fallback: update only stock and boxno
+          final fallbackPayload = <String, dynamic>{
+            'stock': newStock,
+          };
+          if (existingRow?.containsKey('boxNo') == true) {
+            fallbackPayload['boxNo'] = newBox;
+          } else {
+            fallbackPayload['boxno'] = newBox;
           }
           try {
-            await supabase.from(targetTable).update(updatePayload).eq('skuid', item.skuid);
+            await supabase.from(foundTable).update(fallbackPayload).eq(skuColumn, item.skuid);
           } catch (_) {
-            updatePayload['boxNo'] = newBox;
-            updatePayload.remove('boxno');
-            await supabase.from(targetTable).update(updatePayload).eq('skuid', item.skuid);
+            if (fallbackPayload.containsKey('boxno')) {
+              fallbackPayload['boxNo'] = newBox;
+              fallbackPayload.remove('boxno');
+            } else {
+              fallbackPayload['boxno'] = newBox;
+              fallbackPayload.remove('boxNo');
+            }
+            await supabase.from(foundTable).update(fallbackPayload).eq(skuColumn, item.skuid);
           }
         }
 
         // Invalidate cache
         try {
-          Get.find<CacheController>().invalidate(targetTable);
+          Get.find<CacheController>().invalidate(foundTable);
         } catch (_) {}
 
         await _refreshData();
