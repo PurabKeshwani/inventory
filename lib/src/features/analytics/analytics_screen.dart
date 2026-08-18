@@ -56,12 +56,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: _navy,
+        foregroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           'Analytics',
           style: GoogleFonts.montserrat(
             color: Colors.white,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
         ),
         actions: [

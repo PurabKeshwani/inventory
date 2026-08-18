@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -254,9 +253,9 @@ class _LoginFormState extends State<LoginForm> {
                 'Note: Subject to Change of Price\n\n'
                 '10. Contact Information\n'
                 'For any questions or concerns regarding this policy, please contact:\n'
-                'Sr. Treasurer: Atishkar Singh\n'
-                'Phone No: 9049120954',
-                style: termsTextStyle.copyWith(color: Colors.white), // Set color to white
+                'Sr. Treasurer: Payaal Kapoor (9820008894)\n'
+                'Jr. Treasurer: Sakshi Gupta (9833744631)',
+                style: termsTextStyle.copyWith(color: Colors.black87),
               ),
             ],
           ),

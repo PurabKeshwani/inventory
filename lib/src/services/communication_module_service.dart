@@ -1,53 +1,45 @@
+import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:inventory/src/data/model.dart';
+import 'package:inventory/src/controllers/cache_controller.dart';
 
+/// Service for Communication Modules component category.
+///
+/// Architecture: In-Memory Cache with Realtime Invalidation
+/// - Reads transparently check the permanent [CacheController] first.
+/// - Cache misses or [forceRefresh] fetches fresh data from Supabase and populates the cache.
+/// - Any database insert/update/delete triggers Supabase Realtime Postgres events
+///   in [CacheController], which automatically invalidates this table's cache entry.
 class CommunicationModuleService {
   final SupabaseClient _supabase = Supabase.instance.client;
   static const String tableName = 'Communication Modules';
 
-  // Fetch all communication modules from Supabase
-  Future<List<Component>> getAllCommunicationModules() async {
+  CacheController? get _cache {
+    try {
+      return Get.find<CacheController>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Fetch all communication modules from Supabase (with transparent in-memory caching)
+  Future<List<Component>> getAllCommunicationModules({bool forceRefresh = false}) async {
+    // 1. Check in-memory cache first
+    if (!forceRefresh && _cache != null && _cache!.hasData(tableName)) {
+      return _cache!.get<Component>(tableName)!;
+    }
+
+    // 2. Cache miss or forceRefresh -> fetch from Supabase
     try {
       final response = await _supabase
           .from(tableName)
-          .select('skuid, name, boxno, stock, warning');
+          .select();
 
       final List<dynamic> data = response as List<dynamic>;
-
-      // Debug: Print raw data from database
-      print('Raw data from database:');
-      for (int i = 0; i < data.length && i < 5; i++) {
-        print('Row $i: ${data[i]}');
-      }
-
       final components = data.map((json) => Component.fromJson(json)).toList();
 
-      // Debug: Print parsed components
-      print('Parsed components:');
-      for (int i = 0; i < components.length && i < 5; i++) {
-        final comp = components[i];
-        print(
-            'Component $i: name="${comp.name}", stock=${comp.stock}, skuId="${comp.skuId}"');
-      }
-
-      // Debug: Print component count and check for duplicates
-      print('Fetched ${components.length} components from database');
-      final uniqueNames = components.map((c) => c.name).toSet();
-      print('Unique component names: ${uniqueNames.length}');
-
-      if (components.length != uniqueNames.length) {
-        print('WARNING: Found duplicate components in database!');
-        // Print duplicates for debugging
-        final nameCount = <String, int>{};
-        for (final component in components) {
-          nameCount[component.name] = (nameCount[component.name] ?? 0) + 1;
-        }
-        nameCount.forEach((name, count) {
-          if (count > 1) {
-            print('Duplicate: $name appears $count times');
-          }
-        });
-      }
+      // 3. Store in cache
+      _cache?.set<Component>(tableName, components);
 
       return components;
     } catch (error) {
@@ -64,6 +56,7 @@ class CommunicationModuleService {
           .select()
           .single();
 
+      _cache?.invalidate(tableName);
       return Component.fromJson(response);
     } catch (error) {
       throw Exception('Failed to add communication module: $error');
@@ -81,6 +74,7 @@ class CommunicationModuleService {
           .select()
           .single();
 
+      _cache?.invalidate(tableName);
       return Component.fromJson(response);
     } catch (error) {
       throw Exception('Failed to update communication module: $error');
@@ -91,13 +85,29 @@ class CommunicationModuleService {
   Future<void> deleteCommunicationModule(String skuId) async {
     try {
       await _supabase.from(tableName).delete().eq('skuid', skuId);
+      _cache?.invalidate(tableName);
     } catch (error) {
       throw Exception('Failed to delete communication module: $error');
     }
   }
 
-  // Update stock for a specific communication module
-  Future<Component> updateStock(String skuId, int newStock) async {
+  // Check stock for a specific communication module
+  Future<int> getStock(String skuId) async {
+    try {
+      final response = await _supabase
+          .from(tableName)
+          .select('stock')
+          .eq('skuid', skuId)
+          .single();
+
+      return response['stock'] as int;
+    } catch (error) {
+      throw Exception('Failed to get stock for communication module: $error');
+    }
+  }
+
+  // Update stock for a communication module
+  Future<Component?> updateStock(String skuId, int newStock) async {
     try {
       final response = await _supabase
           .from(tableName)
@@ -106,9 +116,10 @@ class CommunicationModuleService {
           .select()
           .single();
 
+      _cache?.invalidate(tableName);
       return Component.fromJson(response);
     } catch (error) {
-      throw Exception('Failed to update stock: $error');
+      throw Exception('Failed to update stock for communication module: $error');
     }
   }
 }

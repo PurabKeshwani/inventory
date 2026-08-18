@@ -60,10 +60,15 @@ class _BulkUploadScreenState extends State<BulkUploadScreen> {
       backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: _navy,
+        foregroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           'Bulk Upload Inventory',
-          style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.w600),
+          style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
         ),
       ),
       body: SingleChildScrollView(

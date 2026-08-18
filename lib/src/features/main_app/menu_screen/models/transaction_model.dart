@@ -1,82 +1,123 @@
+import 'dart:convert';
 import 'package:equatable/equatable.dart';
 
 class TransactionModel extends Equatable {
+  final String transactionId;
+  final String borrowerId;
   final String memberName;
-  final List<dynamic> packageItems;
+  final String division;
+  final String phoneNumber;
+  final List<Map<String, dynamic>> packageItems;
   final String issueDate;
   final String? returnDate;
-  final String transactionId;
-  final String division;
-  final int phoneNumber;
+  final String status;
   final String? profileImageUrl;
+  final String? issuedBy;
 
   const TransactionModel({
+    required this.transactionId,
+    required this.borrowerId,
     required this.memberName,
+    required this.division,
+    required this.phoneNumber,
     required this.packageItems,
     required this.issueDate,
     this.returnDate,
-    required this.transactionId,
-    required this.division,
-    required this.phoneNumber,
+    required this.status,
     this.profileImageUrl,
+    this.issuedBy,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
+    // Safely parse packageItems whether it's String, List, or null
+    List<Map<String, dynamic>> parsedPackage = [];
+    var rawPackage = json['package'];
+    if (rawPackage is String) {
+      try {
+        final decoded = jsonDecode(rawPackage);
+        if (decoded is List) {
+          parsedPackage = decoded
+              .map((item) => Map<String, dynamic>.from(item is Map ? item : {}))
+              .toList();
+        }
+      } catch (_) {}
+    } else if (rawPackage is List) {
+      parsedPackage = rawPackage
+          .map((item) => Map<String, dynamic>.from(item is Map ? item : {}))
+          .toList();
+    }
+
     return TransactionModel(
-      memberName: (json['name'] ?? '').toString(),
-      packageItems: json['package'] ?? [],
+      transactionId: (json['transaction_id'] ?? '').toString(),
+      borrowerId: (json['id'] ?? '').toString(),
+      memberName: (json['name'] ?? 'Unknown Member').toString(),
+      division: (json['class'] ?? 'N/A').toString(),
+      phoneNumber: (json['phonenumber'] ?? '').toString(),
+      packageItems: parsedPackage,
       issueDate: (json['issuedate'] ?? '').toString(),
       returnDate: json['returndate']?.toString(),
-      transactionId: (json['transaction_id'] ?? '').toString(),
-      division: (json['class'] ?? '').toString(),
-      phoneNumber: int.tryParse(json['phonenumber']?.toString() ?? '0') ?? 0,
-      profileImageUrl: null, // Will be set separately
+      status: (json['status'] ?? 'Issued').toString(),
+      issuedBy: json['issuedby']?.toString(),
+      profileImageUrl: json['profile_image_url']?.toString(),
     );
+  }
+
+  bool get isReturned => status.trim().toLowerCase() == 'returned';
+
+  bool get isDue => !isReturned;
+
+  List<String> get componentNames {
+    return packageItems.map<String>((item) {
+      final name = item['compname'] ?? item['name'] ?? 'Component';
+      final qty = item['Quantity'] ?? item['quantity'] ?? '1';
+      return '$name × $qty';
+    }).toList();
+  }
+
+  String get displayItemsSummary {
+    if (componentNames.isEmpty) return 'No components listed';
+    return componentNames.join(', ');
   }
 
   TransactionModel copyWith({
+    String? transactionId,
+    String? borrowerId,
     String? memberName,
-    List<dynamic>? packageItems,
+    String? division,
+    String? phoneNumber,
+    List<Map<String, dynamic>>? packageItems,
     String? issueDate,
     String? returnDate,
-    String? transactionId,
-    String? division,
-    int? phoneNumber,
+    String? status,
     String? profileImageUrl,
+    String? issuedBy,
   }) {
     return TransactionModel(
+      transactionId: transactionId ?? this.transactionId,
+      borrowerId: borrowerId ?? this.borrowerId,
       memberName: memberName ?? this.memberName,
+      division: division ?? this.division,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
       packageItems: packageItems ?? this.packageItems,
       issueDate: issueDate ?? this.issueDate,
       returnDate: returnDate ?? this.returnDate,
-      transactionId: transactionId ?? this.transactionId,
-      division: division ?? this.division,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
+      status: status ?? this.status,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      issuedBy: issuedBy ?? this.issuedBy,
     );
-  }
-
-  List<String> get itemNames {
-    return packageItems
-        .map<String>((item) => item['compname'].toString())
-        .toList();
-  }
-
-  String get displayItems {
-    if (itemNames.isEmpty) return 'No items';
-    if (itemNames.length == 1) return itemNames[0];
-    return '${itemNames[0]}, ${itemNames[1]}...';
   }
 
   @override
   List<Object?> get props => [
+        transactionId,
+        borrowerId,
         memberName,
+        division,
+        phoneNumber,
         packageItems,
         issueDate,
         returnDate,
-        transactionId,
-        division,
-        phoneNumber,
+        status,
         profileImageUrl,
       ];
 }

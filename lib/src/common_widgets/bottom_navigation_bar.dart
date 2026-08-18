@@ -20,8 +20,8 @@ class CustomBottomNavigationBar extends StatelessWidget {
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.search),
-          label: 'Search',
+          icon: Icon(Icons.inventory_2_rounded),
+          label: 'Components',
         ),
         BottomNavigationBarItem(
           icon: CircleAvatar(
@@ -35,8 +35,8 @@ class CustomBottomNavigationBar extends StatelessWidget {
           label: 'Transaction',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.grid_view),
-          label: 'More',
+          icon: Icon(Icons.receipt_long_rounded),
+          label: 'Fines',
         ),
       ],
       currentIndex: currentIndex,

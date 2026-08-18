@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:inventory/src/features/main_app/add_component/NewEntry_consumable.dart';
-import 'package:inventory/src/features/main_app/add_component/add_component_bottom_pop_up%20copy.dart';
 import 'package:inventory/src/features/main_app/add_component/add_component_bottom_pop_up.dart';
 
 class Chooseoption extends StatelessWidget {
