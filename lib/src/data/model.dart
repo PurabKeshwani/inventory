@@ -17,12 +17,16 @@ class Component {
   this.warning,
 });
 
-  // Factory constructor to create Component from Supabase JSON
   factory Component.fromJson(Map<String, dynamic> json) {
     return Component(
-      skuId: json['skuid'] as String?,
-      name: json['name'] as String? ?? 'Unknown Component',
-      boxNo: json['boxno'] as String? ?? 'Not Assigned',
+      skuId: (json['skuid'] ?? json['skuId'] ?? json['sku_id'])?.toString(),
+      name: (json['name'] ?? json['compname'] ?? json['component_name'] ?? 'Unknown Component').toString(),
+      boxNo: (json['boxno'] ??
+              json['boxNo'] ??
+              json['box_no'] ??
+              json['box'] ??
+              'Not Assigned')
+          .toString(),
       stock: _parseToInt(json['stock']),
       warning: _parseToIntNullable(json['warning']),
     );

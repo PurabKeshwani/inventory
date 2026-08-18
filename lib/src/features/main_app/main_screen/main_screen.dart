@@ -13,15 +13,16 @@ import 'package:inventory/src/features/main_app/search_screen/search_screen.dart
 import 'package:inventory/src/features/main_app/transactions_screen/transaction_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:inventory/src/features/main_app/fines/fines_screen.dart';
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
   static final List<Widget> _screenOptions = <Widget>[
     const Dashboard(),
-    // SearchScreen(),
-    const FirstScreen(),
+    const SearchScreen(),
     const TransactionScreen(),
-    const MenuScreen()
+    const FinesScreen()
   ];
 
   @override

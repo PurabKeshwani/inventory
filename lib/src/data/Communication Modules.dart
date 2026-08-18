@@ -4,16 +4,13 @@ import 'package:inventory/src/services/communication_module_service.dart';
 class CommunicationModules {
   final CommunicationModuleService _service = CommunicationModuleService();
 
-  // Fetch components from Supabase
-  Future<List<Component>> getComponents() async {
+  // Fetch components from Supabase (with caching & realtime invalidation)
+  Future<List<Component>> getComponents({bool forceRefresh = false}) async {
     try {
-      final components = await _service.getAllCommunicationModules();
+      final components = await _service.getAllCommunicationModules(forceRefresh: forceRefresh);
       // Remove duplicates based on name (or you could use skuId if preferred)
       return _removeDuplicates(components);
     } catch (error) {
-      // Return empty list if there's an error
-      // You might want to handle this differently based on your app's needs
-      print('Error fetching communication modules: $error');
       return [];
     }
   }
@@ -29,16 +26,9 @@ class CommunicationModules {
       if (!seen.contains(identifier)) {
         seen.add(identifier);
         uniqueComponents.add(component);
-        print(
-            'Added unique component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
-      } else {
-        print(
-            'Removing duplicate component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
       }
     }
 
-    print(
-        'Original count: ${components.length}, After removing duplicates: ${uniqueComponents.length}');
     return uniqueComponents;
   }
 

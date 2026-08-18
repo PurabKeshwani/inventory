@@ -1,89 +1,231 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 
 class GuidelinesScreen extends StatelessWidget {
   const GuidelinesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Fine Policy'),
+        backgroundColor: isDark ? const Color(0xff0F172A) : const Color(0xff19335A),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Terms & Conditions',
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: CAppTheme.bgGradient(context),
+        ),
         child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Rules and Regulations for Inventory of ISA-VESIT',
-                style: GoogleFonts.lato(fontSize: 24, fontWeight: FontWeight.bold),
+              // Header Banner
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? const [Color(0xff0F172A), Color(0xff1E293B)]
+                        : const [Color(0xff19335A), Color(0xff2A4E80)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? const Color(0xff38BDF8).withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black.withOpacity(0.4)
+                          : const Color(0xff19335A).withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xff38BDF8).withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.gavel_rounded, color: isDark ? const Color(0xff38BDF8) : Colors.white, size: 26),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Inventory Usage Agreement',
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Terms governing hardware loans & member compliance',
+                            style: GoogleFonts.lato(
+                              color: isDark ? const Color(0xff94A3B8) : Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
+
               const SizedBox(height: 16),
-              Text(
-                '1. Objective\n'
-                'The purpose of this policy is to outline the responsibilities of students when borrowing components from the ISA and to establish a system of fines for late returns, damage, or loss of components.\n\n'
-                '2. Issuance of Components\n'
-                '● Eligibility: Only students who are currently enrolled for ISA Memberships are eligible to borrow components.\n'
-                '● Issuance Procedure:\n'
-                '  ○ Components will be issued based on availability and necessity.\n'
-                '  ○ A record of issued components will be maintained by the ISA Council.\n\n'
-                '3. Student Responsibilities\n'
-                '● Care: Students are responsible for the proper care and handling of the components.\n'
-                '● Usage: Components must be used only for their intended educational or project purposes.\n'
-                '● Return: Components must be returned by the due date specified at the time of issuance.\n'
-                '● Modification: Modification of the components is not allowed.\n'
-                '● Damage: No damage is allowed. Students will have to pay the entire amount if the component is damaged.\n'
-                '● Loss: If a component is lost, the student is responsible for it and has to pay the entire amount of the component as listed below [refer 9].\n'
-                '● Issuance/Reissuance: Components must be issued or reissued in the presence of and with the approval of a council member only.\n'
-                '● Reissue: The component should be reissued within 1 month of time after issuing the component.\n'
-                '● Timing: For issuance/reissuance of the component the timings are 1) 1:00 pm - 1:30 pm 2) 3:30 pm - 4:00 pm\n\n'
-                '4. Return policy\n'
-                '● Due Date: Components must be returned by the due date specified during issuance.\n'
-                '● Condition: Components must be returned in the same condition as they were issued.\n'
-                '● All the components should be returned to the council before the end semester exam.\n'
-                '● Refer Fine Structure [5] for more terms and conditions regarding the fine payment.\n\n'
-                '5. Fine structure and payment\n'
-                'Sr. no | Amount | Fine | Example\n'
-                '1 | 0 to 99 | 10 Rs | If your component is worth 50 Rs then 10 Rs fine is applied.\n'
-                '2 | 100 to 499 | 12% | If your component is worth 200 Rs then 12% fine is applied i.e = 24rs.\n'
-                '3 | 500 to 999 | 18% | If your component is worth 800 Rs then 18% fine is applied i.e = 144rs.\n'
-                '4 | 1000 plus | 28% | If your component is worth 1000 Rs then 28% fine is applied i.e = 280rs.\n\n'
-                '● Late Returns:\n'
-                '  ○ A fine of [refer 5] per day will be imposed for each day the component is returned late.\n'
-                '  ○ The maximum late fine will not exceed 2500 Rs.\n'
-                '● Component Damage:\n'
-                '  ○ No damage to the components would be accepted.\n'
-                '  ○ In case of damage: Replacement Cost of the new component [refer 9].\n'
-                '● Loss of component:\n'
-                '  ○ Full replacement cost of the component will be charged.\n'
-                '● Payment:\n'
-                '  ○ Fines must be paid within 5 days of notification.\n'
-                '  ○ Payment should be made online.\n\n'
-                '6. Consequences of Non-Payment\n'
-                '● Failure to pay fines may result in:\n'
-                '  ○ Suspension of borrowing privileges.\n'
-                '  ○ Membership Suspension.\n'
-                '  ○ Clearance for collecting Leaving Certificate would not be provided by the Central Library of College.\n\n'
-                '7. Dispute Resolution\n'
-                '● Students who wish to dispute a fine may do so by submitting a written appeal to the ISA committee within 3 days of fine notification.\n'
-                '● The decision of the ISA committee will be final.\n\n'
-                '8. Policy Review\n'
-                '● This policy will be reviewed annually and is subject to change. Updates will be communicated to all students via email and WhatsApp.\n\n'
-                '9. Component price list:\n'
-                'https://bit.ly/ComponentPrice\n'
-                'https://bit.ly/ComponentPrice\n'
-                'Note: Subject to Change of Price\n\n'
-                '10. Contact Information\n'
-                'For any questions or concerns regarding this policy, please contact:\n'
-                'Sr. Treasurer: Atishkar Singh\n'
-                'Phone No: 9049120954',
-                style: GoogleFonts.lato(fontSize: 16),
+
+              _buildTermSection(
+                context: context,
+                number: '1',
+                title: 'Membership & Eligibility',
+                content: 'Borrowing privileges are strictly reserved for verified, active ISA-VESIT student members. Account credentials and QR badges are non-transferable.',
               ),
+
+              const SizedBox(height: 12),
+
+              _buildTermSection(
+                context: context,
+                number: '2',
+                title: 'Permitted Usage & Care',
+                content: 'All borrowed components, microcontrollers, and sensors must be utilized exclusively for academic research, coursework, or official college competitions. Users are expected to exercise extreme care and ESD precautions.',
+              ),
+
+              const SizedBox(height: 12),
+
+              _buildTermSection(
+                context: context,
+                number: '3',
+                title: 'Loan Durations & Reissuance',
+                content: 'Components are issued for a maximum standard loan period (up to 30 days). Reissuance must be approved in person by an ISA council member within 1 month of the original issue date.',
+              ),
+
+              const SizedBox(height: 12),
+
+              _buildTermSection(
+                context: context,
+                number: '4',
+                title: 'Mandatory Return Deadlines',
+                content: 'All outstanding hardware loans must be checked in and returned to the inventory council before the commencement of semester end examinations without exception.',
+              ),
+
+              const SizedBox(height: 12),
+
+              _buildTermSection(
+                context: context,
+                number: '5',
+                title: 'Liability for Damage or Loss',
+                content: 'Modifications, track-cutting, or permanent soldering alterations are strictly prohibited. In the event of hardware damage or loss, the borrower is legally and academically liable for the full replacement cost.',
+              ),
+
+              const SizedBox(height: 12),
+
+              _buildTermSection(
+                context: context,
+                number: '6',
+                title: 'Dispute Resolution & Appeals',
+                content: 'Any discrepancy regarding component condition or fine assessment must be submitted in writing to the ISA Faculty In-Charge and Student Council within 3 working days.',
+              ),
+
+              const SizedBox(height: 30),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTermSection({
+    required BuildContext context,
+    required String number,
+    required String title,
+    required String content,
+  }) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: CAppTheme.cardDecoration(context, radius: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xff0284C7) : const Color(0xff19335A),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    number,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: primaryText,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            content,
+            style: GoogleFonts.lato(
+              fontSize: 13,
+              color: secondaryText,
+              height: 1.45,
+            ),
+          ),
+        ],
       ),
     );
   }

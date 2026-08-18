@@ -1,11 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/main_app/cartscreen/cartscreen.dart';
+import 'package:inventory/src/features/main_app/transactions_screen/member_transactions_screen.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -30,11 +32,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   Future<bool> checkStockAvailability(String skuid) async {
     try {
-      print('Checking stock in table: ${componentcontroller.ClassName.value}');
-      print('Checking for SKUID: $skuid');
-
       if (componentcontroller.ClassName.value.isEmpty) {
-        print('Table name is not set!');
         return false;
       }
 
@@ -44,11 +42,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
           .eq('skuid', skuid)
           .maybeSingle();
 
-      print('Full response from Supabase: $response');
-
       if (response != null) {
         var stockValue = response['stock'];
-        print('Raw stock value: $stockValue');
 
         int currentStock = 0;
 
@@ -60,14 +55,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
           }
         }
 
-        print('Parsed stock value: $currentStock');
         return currentStock > 0;
       } else {
-        print('No stock found for SKUID: $skuid');
         return false;
       }
     } catch (e) {
-      print('Error checking stock: $e');
       return false;
     }
   }
@@ -103,16 +95,26 @@ class _TransactionScreenState extends State<TransactionScreen> {
       // Clear existing cart components
       componentcontroller.Cartcomponents.clear();
 
-      // Parse the package JSON array
-      List<dynamic> components = response['package'];
+      // Safely parse the package JSON
+      var rawPkg = response['package'];
+      List<dynamic> components = [];
+      if (rawPkg is String) {
+        try {
+          components = jsonDecode(rawPkg);
+        } catch (_) {}
+      } else if (rawPkg is List) {
+        components = rawPkg;
+      }
 
       // Add each component to the cart
       for (var comp in components) {
-        componentcontroller.Cartcomponents.add(Cartcomponent(
-          compname: comp['compname'],
-          skuid: comp['skuid'],
-          Quantity: comp['Quantity'],
-        ));
+        if (comp is Map) {
+          componentcontroller.Cartcomponents.add(Cartcomponent(
+            compname: (comp['compname'] ?? comp['name'] ?? 'Component').toString(),
+            skuid: (comp['skuid'] ?? '').toString(),
+            Quantity: int.tryParse(comp['Quantity']?.toString() ?? comp['quantity']?.toString() ?? '1') ?? 1,
+          ));
+        }
       }
       setState(() {
         returnstate = true;
@@ -129,28 +131,23 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   Future<void> _processBarcode(String scanResult) async {
     final String sanitized = scanResult.trim();
-    print('DEBUG: Processing barcode: $sanitized');
 
     if (!mounted) return;
 
     setState(() {
       _scanBarcode = sanitized;
       barcode = sanitized;
-      print('DEBUG: Updated barcode state: $barcode');
     });
 
     try {
       await componentcontroller.skuidanalyze(barcode);
-      print(
-          'DEBUG: SKUID analyzed - ClassName: ${componentcontroller.ClassName.value}');
 
       final hasStock = await checkStockAvailability(barcode);
-      print('DEBUG: Stock check result: $hasStock');
 
       if (!hasStock) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('No stock available for this component'),
               backgroundColor: Colors.red,
             ),
@@ -166,7 +163,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
         if (componentExists) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Component already added to cart'),
               backgroundColor: Colors.orange,
             ),
@@ -181,14 +178,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
             Quantity: 1,
           );
           componentcontroller.Cartcomponents.add(newComponent);
-          print(
-              'DEBUG: Added to cart - ${newComponent.compname} (${newComponent.skuid})');
-          print(
-              'DEBUG: Current cart size: ${componentcontroller.Cartcomponents.length}');
         });
       }
     } catch (e) {
-      print('DEBUG: Error processing barcode: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -202,12 +194,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   Future<void> _startBarcodeScan() async {
     try {
-      print('DEBUG: Starting barcode scan');
-
       // Request camera permission first
       final status = await Permission.camera.request();
       if (!status.isGranted) {
-        print('DEBUG: Camera permission denied');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -218,8 +207,6 @@ class _TransactionScreenState extends State<TransactionScreen> {
         }
         return;
       }
-
-      print('DEBUG: Camera permission granted, starting scan');
 
        if (!mounted) return;
 
@@ -385,391 +372,487 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
-        height: MediaQuery.of(context).size.height * 1,
-        width: MediaQuery.of(context).size.width * 1,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 154, 210, 255),
-              Color.fromARGB(255, 213, 245, 252),
-              Color.fromARGB(255, 242, 254, 255)
-            ],
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-          ),
+        decoration: BoxDecoration(
+          gradient: CAppTheme.bgGradient(context),
         ),
-        child: Column(
-          children: [
-            // Fixed header section
-            Padding(
-              padding: const EdgeInsets.only(top: 20),
-              child: Column(
-                children: [
-                  TextButton(
-                    onPressed: () => _startBarcodeScan(),
-                    child: Container(
-                      width: 300,
-                      decoration: const BoxDecoration(
-                        color: Color(0xff19335A),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Scan to issue component',
-                        style: GoogleFonts.lato(
-                          textStyle: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  TextButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('Enter Transaction ID'),
-                            content: TextField(
-                              controller: returnTransactionIdController,
-                              decoration: const InputDecoration(
-                                hintText: 'Transaction ID',
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  print(
-                                      'Transaction ID from dialog: ${returnTransactionIdController.text}');
-                                  componentcontroller.transactionid.value =
-                                      returnTransactionIdController.text;
-                                  print(
-                                      'Transaction ID from controller: ${componentcontroller.transactionid.value}');
-                                  await fetchTransactionComponents(
-                                      returnTransactionIdController.text);
-                                  Navigator.pop(context);
-                                  returnTransactionIdController.clear();
-                                },
-                                child: const Text('Submit'),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Top Action & Instructions Section
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                child: Column(
+                  children: [
+                    // Instructions Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: CAppTheme.cardDecoration(context, radius: 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded, size: 16, color: accentColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                'How to Use',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryText,
+                                ),
                               ),
                             ],
-                          );
-                        },
-                      );
-                    },
-                    child: Container(
-                      width: 300,
-                      decoration: const BoxDecoration(
-                        color: Color(0xff19335A),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Enter Return Transaction ID',
-                        style: GoogleFonts.lato(
-                          textStyle: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Scrollable list section
-            Expanded(
-              child: componentcontroller.Cartcomponents.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.inventory_2_outlined,
-                            size: 80,
-                            color: const Color(0xff19335A).withValues(alpha: 0.3),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No components added yet',
-                            style: GoogleFonts.lato(
-                              textStyle: TextStyle(
-                                color: const Color(0xff19335A).withValues(alpha: 0.6),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            'Scan a barcode to add components to your cart',
-                            style: GoogleFonts.lato(
-                              textStyle: TextStyle(
-                                color: const Color(0xff19335A).withValues(alpha: 0.4),
-                                fontSize: 14,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 18,
+                                height: 18,
+                                margin: const EdgeInsets.only(top: 2, right: 8),
+                                decoration: BoxDecoration(
+                                  color: accentColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '1',
+                                    style: TextStyle(
+                                      color: isDark ? const Color(0xff080E1A) : Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                              Expanded(
+                                child: Text(
+                                  'Scan components barcode to stage items in your cart and issue them by setting a return date.',
+                                  style: GoogleFonts.lato(fontSize: 12, color: secondaryText, height: 1.35),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 18,
+                                height: 18,
+                                margin: const EdgeInsets.only(top: 2, right: 8),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '2',
+                                    style: TextStyle(
+                                      color: accentColor,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  'To view transaction to apply penalty, change due status scan member code or look up member ID or enter transaction id.',
+                                  style: GoogleFonts.lato(fontSize: 12, color: secondaryText, height: 1.35),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      itemCount: componentcontroller.Cartcomponents.length,
-                      itemBuilder: (ctx, index) {
-                        final component =
-                            componentcontroller.Cartcomponents[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.08),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                  spreadRadius: 0,
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Action Buttons
+                    Row(
+                      children: [
+                        // Scan Component Barcode
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => _startBarcodeScan(),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: isDark
+                                      ? const [Color(0xff0284C7), Color(0xff0369A1)]
+                                      : const [Color(0xff19335A), Color(0xff274A7C)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  // Component details
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // SKU ID
-                                        Text(
-                                          component.skuid,
-                                          style: GoogleFonts.lato(
-                                            textStyle: const TextStyle(
-                                              color: Color(0xff19335A),
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        // Component name
-                                        Text(
-                                          component.compname,
-                                          style: GoogleFonts.lato(
-                                            textStyle: const TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        // Quantity badge
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xff19335A)
-                                                .withValues(alpha: 0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            'Qty: ${component.Quantity}',
-                                            style: GoogleFonts.lato(
-                                              textStyle: const TextStyle(
-                                                color: Color(0xff19335A),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (isDark ? const Color(0xff0284C7) : const Color(0xff19335A))
+                                        .withValues(alpha: 0.25),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
                                   ),
-                                  // Delete button
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: IconButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          componentcontroller.Cartcomponents
-                                              .remove(component);
-                                        });
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Component removed from cart'),
-                                            backgroundColor: Colors.red,
-                                            duration: Duration(seconds: 2),
-                                            behavior: SnackBarBehavior.floating,
-                                          ),
-                                        );
-                                      },
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
-                                        size: 20,
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 18),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      'Scan to Issue',
+                                      style: GoogleFonts.montserrat(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
                                       ),
-                                      padding: const EdgeInsets.all(8),
-                                      constraints: const BoxConstraints(
-                                        minWidth: 36,
-                                        minHeight: 36,
-                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-            ),
-            // Fixed footer section
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Cart info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Cart Summary',
-                          style: GoogleFonts.lato(
-                            textStyle: const TextStyle(
-                              color: Color(0xff19335A),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${componentcontroller.Cartcomponents.length} component${componentcontroller.Cartcomponents.length == 1 ? '' : 's'}',
-                          style: GoogleFonts.lato(
-                            textStyle: TextStyle(
-                              color: const Color(0xff19335A).withValues(alpha: 0.7),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // View Cart button
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xff19335A),
-                          const Color(0xff19335A).withValues(alpha: 0.8),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xff19335A).withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                          spreadRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          print(
-                              'Navigating with Transaction ID: ${componentcontroller.transactionid.value}');
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const Cartscreen()));
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.shopping_cart_outlined,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'View Cart',
-                                style: GoogleFonts.lato(
-                                  textStyle: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
+                        const SizedBox(width: 10),
+                        // Scan Member to View Transactions
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MemberTransactionsScreen(),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xff1E293B) : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xff38BDF8).withValues(alpha: 0.4) : const Color(0xff19335A),
+                                  width: 1.3,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.03),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
                                   ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.person_search_rounded,
+                                    color: accentColor,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      'Member Loans',
+                                      style: GoogleFonts.montserrat(
+                                        color: accentColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Staging Cart List Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 6.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Staged Components (${componentcontroller.Cartcomponents.length})',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: primaryText,
+                      ),
+                    ),
+                    if (componentcontroller.Cartcomponents.isNotEmpty)
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            componentcontroller.Cartcomponents.clear();
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(50, 24),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Clear All',
+                          style: GoogleFonts.lato(
+                            color: isDark ? const Color(0xffF87171) : Colors.red[700],
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // Staging Cart List Section
+              Expanded(
+                child: componentcontroller.Cartcomponents.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.inventory_2_outlined,
+                                  size: 48,
+                                  color: accentColor,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'No Components Staged',
+                                style: GoogleFonts.montserrat(
+                                  color: primaryText,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Tap "Scan to Issue" above to scan barcode and add items.',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.lato(
+                                  color: secondaryText,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
                           ),
                         ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        itemCount: componentcontroller.Cartcomponents.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (ctx, index) {
+                          final component = componentcontroller.Cartcomponents[index];
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: CAppTheme.cardDecoration(context, radius: 12),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: accentColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(Icons.memory_rounded, size: 20, color: accentColor),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        component.compname,
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryText,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'SKU: ${component.skuid}',
+                                            style: GoogleFonts.robotoMono(
+                                              fontSize: 11,
+                                              color: secondaryText,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: accentColor.withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              'Qty: ${component.Quantity}',
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: accentColor,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                  onPressed: () {
+                                    setState(() {
+                                      componentcontroller.Cartcomponents.remove(component);
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Component removed from cart'),
+                                        backgroundColor: Colors.red,
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
+              ),
+
+              // Fixed Bottom Proceed to Cart Bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xff0F172A) : Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
                     ),
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Staged Package',
+                            style: GoogleFonts.montserrat(
+                              color: primaryText,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '${componentcontroller.Cartcomponents.length} item${componentcontroller.Cartcomponents.length == 1 ? '' : 's'} in cart',
+                            style: GoogleFonts.lato(
+                              color: secondaryText,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const Cartscreen()),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isDark
+                                ? const [Color(0xff0284C7), Color(0xff0369A1)]
+                                : const [Color(0xff19335A), Color(0xff274A7C)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isDark ? const Color(0xff0284C7) : const Color(0xff19335A))
+                                  .withValues(alpha: 0.25),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.shopping_cart_checkout_rounded, color: Colors.white, size: 17),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Proceed to Cart',
+                              style: GoogleFonts.montserrat(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
