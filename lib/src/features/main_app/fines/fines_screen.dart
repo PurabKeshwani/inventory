@@ -9,6 +9,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'models/fine_model.dart';
 import 'services/fine_service.dart';
 import 'fine_receipt_dialog.dart';
+import 'package:inventory/src/services/email_reminder_service.dart';
 import 'package:inventory/src/utils/theme/theme.dart';
 
 class FinesScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _FinesScreenState extends State<FinesScreen> {
   List<FineModel> _allFines = [];
   List<FineModel> _filteredFines = [];
   bool _isLoading = true;
+  bool _isSendingBulkEmail = false;
   String _selectedFilter = 'all'; // 'all', 'due', 'paid'
   bool _isTableView = false; // Card view is default for mobile responsiveness
   final TextEditingController _searchController = TextEditingController();
@@ -270,6 +272,135 @@ class _FinesScreenState extends State<FinesScreen> {
           );
         }
       }
+    }
+  }
+
+  Future<void> _sendSingleFineNotice(FineModel fine) async {
+    final email = await EmailReminderService.resolveMemberEmail(
+      memberIdOrEmail: fine.memberId,
+      fallbackEmail: fine.memberEmail,
+    );
+
+    if (email == null || !email.contains('@')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No verified institutional email found for ${fine.memberName ?? fine.memberId}'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      await EmailReminderService.sendFineNoticeEmail(
+        toEmail: email,
+        memberName: fine.memberName ?? fine.memberId,
+        fineId: fine.fineId,
+        reason: fine.reason,
+        amount: fine.amount,
+        issueDate: fine.issueDate ?? fine.createdAt ?? 'N/A',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fine notice email sent to $email successfully!'),
+            backgroundColor: const Color(0xff15803D),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send email: $e'),
+            backgroundColor: Colors.red[700],
+            action: SnackBarAction(
+              label: 'SETTINGS',
+              textColor: Colors.white,
+              onPressed: () => EmailReminderService.showEmailConfigDialog(context),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendBulkFineNotices() async {
+    final unpaidFines = _allFines.where((f) => f.isDue).toList();
+    if (unpaidFines.isEmpty || _isSendingBulkEmail) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Email All Unpaid Fines?',
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'This will send formal payment notice emails from "isa.vesit@ves.ac.in" to all ${unpaidFines.length} members with outstanding fines (Total: ₹${_totalDueAmount.toStringAsFixed(0)}).',
+          style: GoogleFonts.lato(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xff19335A),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Send to ${unpaidFines.length} Members'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isSendingBulkEmail = true);
+
+    int sentCount = 0;
+    int failedCount = 0;
+
+    for (final fine in unpaidFines) {
+      try {
+        final email = await EmailReminderService.resolveMemberEmail(
+          memberIdOrEmail: fine.memberId,
+          fallbackEmail: fine.memberEmail,
+        );
+
+        if (email != null && email.contains('@')) {
+          await EmailReminderService.sendFineNoticeEmail(
+            toEmail: email,
+            memberName: fine.memberName ?? fine.memberId,
+            fineId: fine.fineId,
+            reason: fine.reason,
+            amount: fine.amount,
+            issueDate: fine.issueDate ?? fine.createdAt ?? 'N/A',
+          );
+          sentCount++;
+        } else {
+          failedCount++;
+        }
+      } catch (_) {
+        failedCount++;
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isSendingBulkEmail = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Dispatched $sentCount fine payment notices ($failedCount skipped/failed).'),
+          backgroundColor: sentCount > 0 ? const Color(0xff15803D) : Colors.orange[800],
+        ),
+      );
     }
   }
 
@@ -1754,6 +1885,68 @@ class _FinesScreenState extends State<FinesScreen> {
                           ],
                         ),
                       ),
+
+                      if (_dueCount > 0) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xff1E293B) : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.mark_email_unread_rounded, size: 18, color: isDark ? const Color(0xffF87171) : Colors.red[700]),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '$_dueCount Unpaid Fines',
+                                    style: GoogleFonts.montserrat(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: primaryText,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.settings_outlined, size: 18, color: secondaryText),
+                                    tooltip: 'Email SMTP Settings',
+                                    onPressed: () => EmailReminderService.showEmailConfigDialog(context),
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed: _isSendingBulkEmail ? null : _sendBulkFineNotices,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isDark ? const Color(0xffDC2626) : Colors.red[700],
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    ),
+                                    icon: _isSendingBulkEmail
+                                        ? const SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                          )
+                                        : const Icon(Icons.send_rounded, size: 13),
+                                    label: Text(
+                                      _isSendingBulkEmail ? 'Sending...' : 'Email All Due Fines',
+                                      style: GoogleFonts.montserrat(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -2325,6 +2518,19 @@ class _FinesScreenState extends State<FinesScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             onPressed: () =>
                                 FineReceiptDialog.show(context, fine),
+                          ),
+                          const SizedBox(width: 2),
+                        ] else ...[
+                          IconButton(
+                            icon: Icon(
+                              Icons.mail_outline_rounded,
+                              size: 20,
+                              color: isDark ? const Color(0xffFB923C) : Colors.orange[800],
+                            ),
+                            tooltip: 'Send Payment Notice Email',
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            onPressed: () => _sendSingleFineNotice(fine),
                           ),
                           const SizedBox(width: 2),
                         ],

@@ -7,6 +7,8 @@ import 'package:inventory/src/controllers/cache_controller.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/main_app/fines/models/fine_model.dart';
 import 'package:inventory/src/features/main_app/fines/services/fine_service.dart';
+import 'package:inventory/src/services/email_reminder_service.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
   final int initialTabIndex; // 0: Current Due, 1: All Past
@@ -101,6 +103,156 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
           ),
         );
       }
+    }
+  }
+
+  bool _isSendingBulkEmail = false;
+
+  Future<void> _sendSingleDueReminder(Map<String, dynamic> tx) async {
+    final memberId = tx['id']?.toString() ?? '';
+    final borrowerName = tx['name']?.toString() ?? 'Student';
+    final txId = tx['transaction_id']?.toString() ?? '';
+    final issueDate = tx['issuedate']?.toString() ?? '';
+    final returnDate = tx['returndate']?.toString() ?? 'Immediate';
+    final pkgList = _parsePackage(tx['package']);
+
+    final email = await EmailReminderService.resolveMemberEmail(
+      memberIdOrEmail: memberId,
+    );
+
+    if (email == null || !email.contains('@')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No verified email found for $borrowerName ($memberId)'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final compNames = pkgList
+          .map((i) => '${i['compname'] ?? i['name'] ?? 'Component'} (Qty: ${i['Quantity'] ?? i['quantity'] ?? 1})')
+          .toList();
+
+      await EmailReminderService.sendDueReminderEmail(
+        toEmail: email,
+        memberName: borrowerName,
+        transactionId: txId,
+        issueDate: issueDate,
+        expectedReturnDate: returnDate,
+        componentNames: compNames.isNotEmpty ? compNames : ['Borrowed Hardware Component'],
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Reminder email sent to $email successfully!'),
+            backgroundColor: const Color(0xff15803D),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send email: $e'),
+            backgroundColor: Colors.red[700],
+            action: SnackBarAction(
+              label: 'SETTINGS',
+              textColor: Colors.white,
+              onPressed: () => EmailReminderService.showEmailConfigDialog(context),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendBulkDueReminders(List<Map<String, dynamic>> dueList) async {
+    if (dueList.isEmpty || _isSendingBulkEmail) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Send Due Reminders to All?',
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'This will send automated overdue return emails from "isa.vesit@ves.ac.in" to all ${dueList.length} members with currently borrowed components.',
+          style: GoogleFonts.lato(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xff19335A),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Send to ${dueList.length} Members'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isSendingBulkEmail = true);
+
+    int sentCount = 0;
+    int failedCount = 0;
+
+    for (final tx in dueList) {
+      try {
+        final memberId = tx['id']?.toString() ?? '';
+        final borrowerName = tx['name']?.toString() ?? 'Student';
+        final txId = tx['transaction_id']?.toString() ?? '';
+        final issueDate = tx['issuedate']?.toString() ?? '';
+        final returnDate = tx['returndate']?.toString() ?? 'Immediate';
+        final pkgList = _parsePackage(tx['package']);
+
+        final email = await EmailReminderService.resolveMemberEmail(
+          memberIdOrEmail: memberId,
+        );
+
+        if (email != null && email.contains('@')) {
+          final compNames = pkgList
+              .map((i) => '${i['compname'] ?? i['name'] ?? 'Component'} (Qty: ${i['Quantity'] ?? i['quantity'] ?? 1})')
+              .toList();
+
+          await EmailReminderService.sendDueReminderEmail(
+            toEmail: email,
+            memberName: borrowerName,
+            transactionId: txId,
+            issueDate: issueDate,
+            expectedReturnDate: returnDate,
+            componentNames: compNames.isNotEmpty ? compNames : ['Borrowed Hardware Component'],
+          );
+          sentCount++;
+        } else {
+          failedCount++;
+        }
+      } catch (_) {
+        failedCount++;
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isSendingBulkEmail = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Dispatched $sentCount due reminder emails ($failedCount skipped/failed).'),
+          backgroundColor: sentCount > 0 ? const Color(0xff15803D) : Colors.orange[800],
+        ),
+      );
     }
   }
 
@@ -671,16 +823,69 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _loadTransactions,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        itemCount: list.length,
-        itemBuilder: (context, index) {
-          final tx = list[index];
-          return _buildTransactionCard(tx, isDueTab: isDueTab);
-        },
-      ),
+    return Column(
+      children: [
+        if (isDueTab && list.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: Colors.white,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${list.length} Items Due / Active',
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: const Color(0xff19335A),
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.settings_outlined, size: 18, color: Colors.grey),
+                      tooltip: 'Email SMTP Settings',
+                      onPressed: () => EmailReminderService.showEmailConfigDialog(context),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _isSendingBulkEmail ? null : () => _sendBulkDueReminders(list),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xff19335A),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      ),
+                      icon: _isSendingBulkEmail
+                          ? const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.send_rounded, size: 13),
+                      label: Text(
+                        _isSendingBulkEmail ? 'Sending...' : 'Email All Due',
+                        style: GoogleFonts.montserrat(fontSize: 11.5, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadTransactions,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              itemCount: list.length,
+              itemBuilder: (context, index) {
+                final tx = list[index];
+                return _buildTransactionCard(tx, isDueTab: isDueTab);
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -869,6 +1074,17 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                if (isDueTab && !isReturned) ...[
+                  IconButton(
+                    icon: Icon(Icons.mail_outline_rounded, size: 18, color: Colors.orange[800]),
+                    tooltip: 'Send Due Reminder Email',
+                    constraints: const BoxConstraints(),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    onPressed: () => _sendSingleDueReminder(tx),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+
                 // Apply Fine Button
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
