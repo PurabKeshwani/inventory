@@ -22,8 +22,8 @@ class _DashboardState extends State<Dashboard> {
         },
         child: const Icon(Icons.qr_code_scanner, color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: const Column(
+      body: const SingleChildScrollView(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ClassContainer(label: "Microcontroller"),

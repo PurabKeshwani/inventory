@@ -16,7 +16,7 @@ class Thankyou extends StatelessWidget {
     appBar: CustomAppBar(),
      body:
 Container(
-  decoration: BoxDecoration(
+  decoration: const BoxDecoration(
      gradient: LinearGradient(
               colors: [
                 Color.fromARGB(255, 154, 210, 255),
@@ -31,9 +31,9 @@ Container(
   child: Column(
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
-      SizedBox(height: 50),
-      Image(image: AssetImage("assets/logo/tick3.gif")),
-      SizedBox(height: 1),
+      const SizedBox(height: 50),
+      const Image(image: AssetImage("assets/logo/tick3.gif")),
+      const SizedBox(height: 1),
       Padding(
         padding: const EdgeInsets.only(left: 20),
         child: Text(thankyoucontroller.ThankyouStatus.value==''?'Transaction Successful!':thankyoucontroller.ThankyouStatus.value,style: GoogleFonts.lato(

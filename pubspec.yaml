@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  google_fonts: ^6.2.1
+  google_fonts: ^8.0.0
   flutter_native_splash: ^2.4.0
   liquid_swipe: ^3.1.0
   smooth_page_indicator: ^1.1.0
@@ -54,7 +54,10 @@ dependencies:
   flutter_bloc: ^9.1.1
   equatable: ^2.0.5
   http: ^1.6.0
-  
+  csv: ^6.0.0
+  file_picker: ^8.1.2
+  path_provider: ^2.1.0
+  share_plus: ^10.0.0
   
   # syncfusion_flutter_pdfviewer: ^26.1.40
 

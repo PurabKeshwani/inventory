@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:inventory/src/common_widgets/sidebar_screens/about_screen.dart';
 import 'package:inventory/src/common_widgets/sidebar_screens/fine_policy_screen.dart';
 import 'package:inventory/src/common_widgets/sidebar_screens/guidelines_screen.dart';
+import 'package:inventory/src/features/analytics/analytics_screen.dart';
+import 'package:inventory/src/features/bulk_upload/bulk_upload_screen.dart';
 // import 'package:inventory/src/constants/image_strings.dart';
 
 class CustomSideDrawer extends StatelessWidget {
+  const CustomSideDrawer({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -25,7 +29,7 @@ class CustomSideDrawer extends StatelessWidget {
                           "assets/images/isa-vesit-color-logo.png"))),
             ),
             ListTile(
-              title: Text('T&C',style: TextStyle(
+              title: const Text('T&C',style: TextStyle(
                 color: Colors.black
               ),),
               onTap: () {
@@ -34,7 +38,7 @@ class CustomSideDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              title: Text('Fine Policy',style: TextStyle(
+              title: const Text('Fine Policy',style: TextStyle(
                 color: Colors.black
               ),),
               onTap: () {
@@ -43,7 +47,41 @@ class CustomSideDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              title: Text('About',style: TextStyle(
+  leading: const Icon(
+    Icons.bar_chart_rounded,
+    color: Colors.black87,
+  ),
+  title: const Text(
+    'Analytics',
+    style: TextStyle(color: Colors.black),
+  ),
+  onTap: () {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AnalyticsScreen(),
+      ),
+    );
+  },
+),
+            ListTile(
+  leading: const Icon(
+    Icons.upload_file_rounded,
+    color: Colors.black87,
+  ),
+  title: const Text(
+    'Bulk Upload Inventory',
+    style: TextStyle(color: Colors.black),
+  ),
+  onTap: () {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const BulkUploadScreen(),
+      ),
+    );
+  },
+),
+            ListTile(
+              title: const Text('About',style: TextStyle(
                 color: Colors.black
               ),),
               onTap: () {

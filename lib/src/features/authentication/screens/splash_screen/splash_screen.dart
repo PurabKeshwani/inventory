@@ -28,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
               duration: const Duration(milliseconds: 1600),
               bottom: animate ? 30 : -30,
               height: 350,
-              child: Image(
+              child: const Image(
                 image: AssetImage(tSplashISAlogo),
               )),
           Positioned(
@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     tAppName,
                     style: Theme.of(context).textTheme.headlineLarge,
                   ),
-                  Text(tAppTagline)
+                  const Text(tAppTagline)
                 ],
               ))
         ],
@@ -50,10 +50,10 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future startAnimation() async {
-    await Future.delayed(Duration(microseconds: 500));
+    await Future.delayed(const Duration(microseconds: 500));
     setState(() => animate = true);
-    await Future.delayed(Duration(microseconds: 5000));
+    await Future.delayed(const Duration(microseconds: 5000));
     Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => WelcomeScreen()));
+        context, MaterialPageRoute(builder: (context) => const WelcomeScreen()));
   }
 }

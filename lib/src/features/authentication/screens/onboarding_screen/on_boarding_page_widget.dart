@@ -22,14 +22,14 @@ class onBoardingPageWidget extends StatelessWidget {
               Text(
                 model.title,
                 style:
-                    TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                    const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 20,
               ),
               Text(
                 model.counterTitile,
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           )

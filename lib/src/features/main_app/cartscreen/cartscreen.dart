@@ -29,7 +29,7 @@ class _CartscreenState extends State<Cartscreen> {
   bool _isLoading = false;
 
   final ComponentController componentcontroller =
-      Get.put(ComponentController());
+      Get.find<ComponentController>();
 
   final Emailcontroller emailcontroller = Get.put(Emailcontroller());
 
@@ -39,7 +39,7 @@ class _CartscreenState extends State<Cartscreen> {
 
   var month;
 
-  final uuid = Uuid().v4();
+  final uuid = const Uuid().v4();
 
   Future<void> updateQuantity(Cartcomponent component) async {
     componentcontroller.skuidanalyze(component.skuid);
@@ -47,12 +47,19 @@ class _CartscreenState extends State<Cartscreen> {
         .from(componentcontroller.ClassName.value)
         .select('stock')
         .eq('skuid', component.skuid);
-    final stockvalue = tablestock[0]['stock'] as int;
-    final finalstock = stockvalue - component.Quantity;
+      final stockvalue = tablestock[0]['stock'] as int;
 
-    await supabase
-        .from(componentcontroller.ClassName.value)
-        .update({'stock': finalstock}).eq('skuid', component.skuid);
+if (stockvalue <= 0) {
+  return;
+}
+
+final finalstock =
+    (stockvalue - component.Quantity).clamp(0, 999999);
+
+await supabase
+    .from(componentcontroller.ClassName.value)
+    .update({'stock': finalstock})
+    .eq('skuid', component.skuid);
   }
 
   void scheduleNotification(DateTime scheduledDate) async {
@@ -86,7 +93,7 @@ class _CartscreenState extends State<Cartscreen> {
     int day = taarikh.day;
     int year = taarikh.year;
 
-    String aslitaarikh = '${day}/${month}/${year}';
+    String aslitaarikh = '$day/$month/$year';
 
     return aslitaarikh;
   }
@@ -103,15 +110,19 @@ class _CartscreenState extends State<Cartscreen> {
       return;
     }
 
-    final stockvalue = tablestock[0]['stock'] as int;
-    final finalstock = stockvalue + component.Quantity;
+      final stockvalue = tablestock[0]['stock'] as int;
+final finalstock = stockvalue - component.Quantity;
 
-    print('transaction id:');
-    print(componentcontroller.transactionid.value);
-    await supabase
-        .from(componentcontroller.ClassName.value)
-        .update({'stock': finalstock}).eq('skuid', component.skuid);
+await supabase
+    .from(componentcontroller.ClassName.value)
+    .update({'stock': finalstock})
+    .eq('skuid', component.skuid);
 
+await Future.delayed(
+  const Duration(milliseconds: 200),
+);
+     
+     
     await supabase.from('Transactions').update({'status': 'Returned'}).eq(
         'transaction_id', componentcontroller.transactionid.value);
 
@@ -167,7 +178,7 @@ class _CartscreenState extends State<Cartscreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        content: Container(
+        content: SizedBox(
           height: 300,
           width: 300,
           child: MobileScanner(
@@ -293,9 +304,9 @@ class _CartscreenState extends State<Cartscreen> {
         children: [
           // Table Header
           Container(
-            decoration: BoxDecoration(
-              color: const Color(0xff19335A),
-              borderRadius: const BorderRadius.only(
+            decoration: const BoxDecoration(
+              color: Color(0xff19335A),
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
               ),
@@ -333,7 +344,7 @@ class _CartscreenState extends State<Cartscreen> {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -359,7 +370,7 @@ class _CartscreenState extends State<Cartscreen> {
       padding: const EdgeInsets.fromLTRB(2, 12, 2, 12),
       child: Text(
         text,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
           color: Colors.black87,
         ),
@@ -412,7 +423,7 @@ class _CartscreenState extends State<Cartscreen> {
   @override
   Widget build(BuildContext context) {
     final ComponentController componentcontroller =
-        Get.put(ComponentController());
+        Get.find<ComponentController>();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xff19335A),

@@ -16,12 +16,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
-  static List<Widget> _screenOptions = <Widget>[
-    Dashboard(),
+  static final List<Widget> _screenOptions = <Widget>[
+    const Dashboard(),
     // SearchScreen(),
-    FirstScreen(),
-    TransactionScreen(),
-    MenuScreen()
+    const FirstScreen(),
+    const TransactionScreen(),
+    const MenuScreen()
   ];
 
   @override

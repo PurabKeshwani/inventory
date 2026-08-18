@@ -28,7 +28,7 @@ class _LoginFormState extends State<LoginForm> {
   Future<void> emailsignin() async {
     if (!isTermsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please accept the terms and conditions to proceed.")),
+        const SnackBar(content: Text("Please accept the terms and conditions to proceed.")),
       );
       return;
     }
@@ -47,9 +47,9 @@ class _LoginFormState extends State<LoginForm> {
         final prefs = await SharedPreferences.getInstance();
         prefs.setString('email', emailGet.emailget.value);
       }
-    } on Exception catch (e) {
+    } on Exception {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("You are not an ISA Member!")));
+          .showSnackBar(const SnackBar(content: Text("You are not an ISA Member!")));
     }
   }
 
@@ -58,14 +58,12 @@ class _LoginFormState extends State<LoginForm> {
     super.initState();
 
     supabase.auth.refreshSession().then((session) {
-      if (session != null) {
-        emailGet.emailget.value = session.user!.email!;
-        emailGet.mailchecker();
-      }
+      emailGet.emailget.value = session.user!.email!;
+      emailGet.mailchecker();
     });
   }
 
-  TextStyle termsTextStyle = TextStyle(
+  TextStyle termsTextStyle = const TextStyle(
     fontSize: 16.0,
     color: Colors.black,
   );
@@ -74,7 +72,7 @@ class _LoginFormState extends State<LoginForm> {
   Widget build(BuildContext context) {
     return Form(
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -86,7 +84,7 @@ class _LoginFormState extends State<LoginForm> {
                   hintText: "Email",
                   border: OutlineInputBorder()),
             ),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             TextFormField(
@@ -113,7 +111,7 @@ class _LoginFormState extends State<LoginForm> {
                   onPressed: () {
                     _showTermsAndConditions();
                   },
-                  child: Text("Terms and Conditions"),
+                  child: const Text("Terms and Conditions"),
                 ),
               ],
             ),
@@ -141,11 +139,11 @@ class _LoginFormState extends State<LoginForm> {
                                   GestureDetector(
                                     onTap: () {},
                                     child: Container(
-                                      padding: EdgeInsets.all(20),
+                                      padding: const EdgeInsets.all(20),
                                       decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(10),
-                                          color: Color.fromARGB(
+                                          color: const Color.fromARGB(
                                               110, 180, 170, 132)),
                                       child: Row(
                                         children: [
@@ -163,7 +161,7 @@ class _LoginFormState extends State<LoginForm> {
                                                     .textTheme
                                                     .headlineMedium,
                                               ),
-                                              Text("Verify using Email")
+                                              const Text("Verify using Email")
                                             ],
                                           )
                                         ],
@@ -174,12 +172,12 @@ class _LoginFormState extends State<LoginForm> {
                               ),
                             ));
                   },
-                  child: Text("Forgot Password")),
+                  child: const Text("Forgot Password")),
             ),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                icon: Icon(Icons.email),
+                icon: const Icon(Icons.email),
                 onPressed: () {
                   emailsignin();
                 },
@@ -205,7 +203,7 @@ class _LoginFormState extends State<LoginForm> {
                 "Terms and Conditions",
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
                 '1. Objective\n'
                 'The purpose of these guidelines is to provide a clear understanding of the rules and procedures for the ISA-VESIT inventory system.\n\n'

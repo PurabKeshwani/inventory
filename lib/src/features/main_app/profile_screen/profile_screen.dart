@@ -66,10 +66,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         leading: Theme(
           data: Theme.of(context).copyWith(
-            iconTheme: IconThemeData(color: Colors.black54),
+            iconTheme: const IconThemeData(color: Colors.black54),
           ),
           child: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () {
               Navigator.pop(context);
             },
@@ -78,13 +78,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: const Color(0xffC5E3FF),
         title: Text('My Profile', style: GoogleFonts.lato(color: Colors.black)),
       ),
-      body: Container(
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              decoration: BoxDecoration(color: Color(0xffC5E3FF)),
+              decoration: const BoxDecoration(color: Color(0xffC5E3FF)),
               child: Column(
                 children: [
                   GestureDetector(
@@ -92,7 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: CircleAvatar(
                       backgroundImage: _image != null
                           ? FileImage(_image!) as ImageProvider
-                          : AssetImage("assets/logo/ISA-Header-(LogoOnly)"),
+                          : const AssetImage("assets/logo/ISA-Header-(LogoOnly)"),
                       radius: 90,
                     ),
                   ),
@@ -102,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Center(
                         child: Text(
                           emailGet.Namefrommail.value,
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 34,
                               fontWeight: FontWeight.w300,
                               color: Colors.black),
@@ -113,11 +112,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            Padding(
+           Padding(
               padding: const EdgeInsets.only(top: 20),
               child: LogOUtWidget(),
             ),
-            SizedBox(height: 400),
+            const SizedBox(height: 40),
           ],
         ),
       ),

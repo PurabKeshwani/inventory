@@ -15,7 +15,7 @@ import 'package:inventory/src/features/main_app/components_in_class_screen/compo
 
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../services/realtime_inventory_service.dart';
 class Stock {
   int Stockval;
 
@@ -39,14 +39,27 @@ class _ClassscreenState extends State<Classscreen> {
   bool _isLoadingComponents = false;
   List<Component> _components = [];
 
-  @override
-  void initState() {
-    super.initState();
-    controller.Classcomponents.clear();
-    print("Title passed to screen: '${widget.title}'");
-    print("initState called - components cleared");
-    _loadComponents();
-  }
+   late RealtimeInventoryService realtimeService;
+RealtimeChannel? channel;
+
+@override
+void initState() {
+  super.initState();
+
+  controller.Classcomponents.clear();
+
+  realtimeService = RealtimeInventoryService();
+
+  _loadComponents();
+
+  channel = realtimeService.subscribe(
+    getTableNameByTitle(widget.title),
+    () async {
+      print("Realtime update received");
+      await _loadComponents();
+    },
+  );
+}
 
   Future<void> _loadComponents() async {
     // Prevent multiple simultaneous calls
@@ -83,39 +96,39 @@ class _ClassscreenState extends State<Classscreen> {
         }
       }
 
-      // Group components by name and combine their stock
-      final componentMap = <String, Component>{};
+     final Map<String, Component> componentMap = {};
+final Map<String, int> totalCountMap = {};
+final Map<String, int> availableCountMap = {};
 
-      for (final component in componentList) {
-        final nameKey = component.name.trim().toLowerCase();
-        print(
-            'Processing: "${component.name}" -> Key: "$nameKey" (${component.skuId})');
+for (final component in componentList) {
+  final key = component.name.trim().toLowerCase();
 
-        if (componentMap.containsKey(nameKey)) {
-          // Component with same name exists, combine stock
-          final existing = componentMap[nameKey]!;
-          final combinedStock = existing.stock + component.stock;
+  componentMap.putIfAbsent(key, () => component);
 
-          // Create new component with combined stock, keeping the first skuId and boxNo
-          componentMap[nameKey] = Component(
-            skuId: existing.skuId,
-            name: existing.name,
-            boxNo: existing.boxNo,
-            stock: combinedStock,
-            warning: existing.warning,
-          );
+  totalCountMap[key] = (totalCountMap[key] ?? 0) + 1;
 
-          print(
-              'Combined ${component.name}: ${existing.stock} + ${component.stock} = $combinedStock');
-        } else {
-          // First occurrence of this component name
-          componentMap[nameKey] = component;
-          print(
-              'Adding unique component: ${component.name} (${component.skuId}) - Stock: ${component.stock}');
-        }
-      }
+  if (component.stock == 1) {
+    availableCountMap[key] =
+        (availableCountMap[key] ?? 0) + 1;
+  }
+}
 
-      final uniqueComponents = componentMap.values.toList();
+final uniqueComponents = componentMap.entries.map((entry) {
+  final key = entry.key;
+  final component = entry.value;
+
+   return Component(
+  skuId: component.skuId,
+  name: component.name,
+  boxNo: component.boxNo,
+  stock: totalCountMap[key]!,
+  availableStock: availableCountMap[key] ?? 0,
+  issuedStock:
+      totalCountMap[key]! -
+      (availableCountMap[key] ?? 0),
+  warning: component.warning,
+);
+}).toList();
 
       // Debug: Print final grouped components
       print("Final grouped components:");
@@ -253,6 +266,14 @@ class _ClassscreenState extends State<Classscreen> {
       ),
     );
   }
+    @override
+void dispose() {
+  if (channel != null) {
+    Supabase.instance.client.removeChannel(channel!);
+  }
+
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -260,16 +281,16 @@ class _ClassscreenState extends State<Classscreen> {
       appBar: AppBar(
         leading: Theme(
           data: Theme.of(context).copyWith(
-            iconTheme: IconThemeData(color: Colors.black54),
+            iconTheme: const IconThemeData(color: Colors.black54),
           ),
           child: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () {
               Navigator.pop(context);
             },
           ),
         ),
-        backgroundColor: Color(0xffC5E3FF),
+        backgroundColor: const Color(0xffC5E3FF),
         title: Text(
           widget.title,
           style: GoogleFonts.lato(color: Colors.black),
@@ -290,7 +311,7 @@ class _ClassscreenState extends State<Classscreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15),
           child: isLoading
-              ? Center(
+              ? const Center(
                   child: CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                   ),
@@ -328,7 +349,78 @@ class _ClassscreenState extends State<Classscreen> {
                               ],
                             ),
                             const SizedBox(height: 5),
-                            Text('Stock: ${component.stock}'),
+                               Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: component.stock == 0
+                                        ? Colors.red.withValues(alpha: 0.15)
+                                        : component.stock <= 2
+                                            ? Colors.orange.withValues(alpha: 0.15)
+                                            : Colors.green.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'Stock: ${component.stock}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: component.stock == 0
+                                          ? Colors.red
+                                          : component.stock <= 2
+                                              ? Colors.orange
+                                              : Colors.green,
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 5),
+
+                                 const SizedBox(width: 8),
+
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.black),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Available: ${component.availableStock}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 8),
+
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.black),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Issued: ${component.issuedStock}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              ],
+                            ),
                           ],
                         ),
                         onTap: () {

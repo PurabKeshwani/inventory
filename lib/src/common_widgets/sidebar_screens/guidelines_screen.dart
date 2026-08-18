@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class GuidelinesScreen extends StatelessWidget {
+  const GuidelinesScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Fine Policy'),
+        title: const Text('Fine Policy'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -18,7 +20,7 @@ class GuidelinesScreen extends StatelessWidget {
                 'Rules and Regulations for Inventory of ISA-VESIT',
                 style: GoogleFonts.lato(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 '1. Objective\n'
                 'The purpose of this policy is to outline the responsibilities of students when borrowing components from the ISA and to establish a system of fines for late returns, damage, or loss of components.\n\n'

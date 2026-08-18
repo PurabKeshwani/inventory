@@ -8,6 +8,7 @@ import 'package:inventory/src/features/main_app/search_screen/first_screen.dart'
 // import 'package:inventory/src/features/authentication/screens/splash_screen/splash_screen.dart';
 // import 'package:inventory/src/features/authentication/screens/welcome/welcome.dart';
 import 'package:inventory/src/utils/theme/theme.dart';
+import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
@@ -32,7 +33,12 @@ void main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4Y3NhenhyZ2tyc2xicWV3b3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3NDQyODMsImV4cCI6MjAzNTMyMDI4M30.NcvtPsa_FC_3ozm4G43pDrY8XtO2zhtM2RVW1WFOy78',
   );
 
-  runApp(MyApp());
+  // Registered ONCE here, permanently. Every screen must use Get.find()
+  // instead of Get.put() for this controller — re-putting it wipes out
+  // whatever's in the cart, which was silently breaking the issue flow.
+  Get.put(ComponentController(), permanent: true);
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

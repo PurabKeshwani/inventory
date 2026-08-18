@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:inventory/src/features/main_app/profile_screen/profile_screen.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const CustomAppBar({super.key});
+
   // final String title;
   // final List<Widget>? actions;
 
@@ -13,10 +15,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Color(0xffC5E3FF), // Set the background color
+      backgroundColor: const Color(0xffC5E3FF), // Set the background color
       elevation: 0, // Remove the shadow
       leading: IconButton(
-        icon: Icon(Icons.menu, color: Colors.black87), // Hamburger menu icon
+        icon: const Icon(Icons.menu, color: Colors.black87), // Hamburger menu icon
         onPressed: () {
           Scaffold.of(context).openDrawer();
         },
@@ -33,10 +35,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => ProfileScreen()),
+              MaterialPageRoute(builder: (context) => const ProfileScreen()),
             );
           },
-          child: Padding(
+          child: const Padding(
             padding: EdgeInsets.all(18.0),
             child: Icon(Icons.account_circle_sharp),
             // CircleAvatar(
@@ -50,5 +52,5 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

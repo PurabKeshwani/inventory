@@ -21,9 +21,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
   late String barcode;
   late String compname = '';
   bool returnstate = false;
-
+  bool _isProcessingScan = false; // prevents duplicate onDetect firings
   final ComponentController componentcontroller =
-      Get.put(ComponentController());
+      Get.find<ComponentController>();
 
   final transactionidcontroller = TextEditingController();
   final returnTransactionIdController = TextEditingController();
@@ -75,7 +75,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
   Future<void> fetchTransactionComponents(String transactionId) async {
     if (transactionId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter a valid transaction ID')),
+        const SnackBar(content: Text('Please enter a valid transaction ID')),
       );
       return;
     }
@@ -87,44 +87,42 @@ class _TransactionScreenState extends State<TransactionScreen> {
           .eq('transaction_id', transactionId)
           .single();
 
-      if (response != null) {
-        // Check if the transaction is already returned
-        if (response['status'] == 'Returned') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('This transaction has already been returned')),
-          );
-          return;
-        }
-
-        // Set the transaction ID in the controller
-        componentcontroller.transactionid.value =
-            returnTransactionIdController.text;
-
-        // Clear existing cart components
-        componentcontroller.Cartcomponents.clear();
-
-        // Parse the package JSON array
-        List<dynamic> components = response['package'];
-
-        // Add each component to the cart
-        for (var comp in components) {
-          componentcontroller.Cartcomponents.add(Cartcomponent(
-            compname: comp['compname'],
-            skuid: comp['skuid'],
-            Quantity: comp['Quantity'],
-          ));
-        }
-        setState(() {
-          returnstate = true;
-          componentcontroller.Status.value = 'Returned';
-          componentcontroller.returnorissue.value = true;
-        });
+      // Check if the transaction is already returned
+      if (response['status'] == 'Returned') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('This transaction has already been returned')),
+        );
+        return;
       }
+
+      // Set the transaction ID in the controller
+      componentcontroller.transactionid.value =
+          returnTransactionIdController.text;
+
+      // Clear existing cart components
+      componentcontroller.Cartcomponents.clear();
+
+      // Parse the package JSON array
+      List<dynamic> components = response['package'];
+
+      // Add each component to the cart
+      for (var comp in components) {
+        componentcontroller.Cartcomponents.add(Cartcomponent(
+          compname: comp['compname'],
+          skuid: comp['skuid'],
+          Quantity: comp['Quantity'],
+        ));
+      }
+      setState(() {
+        returnstate = true;
+        componentcontroller.Status.value = 'Returned';
+        componentcontroller.returnorissue.value = true;
+      });
     } catch (e) {
       print('Error fetching transaction: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Transaction not found or error occurred')),
+        const SnackBar(content: Text('Transaction not found or error occurred')),
       );
     }
   }
@@ -141,68 +139,64 @@ class _TransactionScreenState extends State<TransactionScreen> {
       print('DEBUG: Updated barcode state: $barcode');
     });
 
-    if (componentcontroller != null) {
-      try {
-        await componentcontroller.skuidanalyze(barcode);
-        print(
-            'DEBUG: SKUID analyzed - ClassName: ${componentcontroller.ClassName.value}');
+    try {
+      await componentcontroller.skuidanalyze(barcode);
+      print(
+          'DEBUG: SKUID analyzed - ClassName: ${componentcontroller.ClassName.value}');
 
-        final hasStock = await checkStockAvailability(barcode);
-        print('DEBUG: Stock check result: $hasStock');
+      final hasStock = await checkStockAvailability(barcode);
+      print('DEBUG: Stock check result: $hasStock');
 
-        if (!hasStock) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('No stock available for this component'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-
-        if (mounted) {
-          // Check if component with same SKUID already exists
-          bool componentExists = componentcontroller.Cartcomponents.any(
-              (component) => component.skuid == barcode);
-
-          if (componentExists) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Component already added to cart'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-            return;
-          }
-
-          setState(() {
-            final newComponent = Cartcomponent(
-              compname: componentcontroller.CompName.value,
-              skuid: barcode,
-              Quantity: 1,
-            );
-            componentcontroller.Cartcomponents.add(newComponent);
-            print(
-                'DEBUG: Added to cart - ${newComponent.compname} (${newComponent.skuid})');
-            print(
-                'DEBUG: Current cart size: ${componentcontroller.Cartcomponents.length}');
-          });
-        }
-      } catch (e) {
-        print('DEBUG: Error processing barcode: $e');
+      if (!hasStock) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error processing barcode: $e'),
+              content: Text('No stock available for this component'),
               backgroundColor: Colors.red,
             ),
           );
         }
+        return;
       }
-    } else {
-      print('DEBUG: Component controller is null');
+
+      if (mounted) {
+        // Check if component with same SKUID already exists
+        bool componentExists = componentcontroller.Cartcomponents.any(
+            (component) => component.skuid == barcode);
+
+        if (componentExists) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Component already added to cart'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+
+        setState(() {
+          final newComponent = Cartcomponent(
+            compname: componentcontroller.CompName.value,
+            skuid: barcode,
+            Quantity: 1,
+          );
+          componentcontroller.Cartcomponents.add(newComponent);
+          print(
+              'DEBUG: Added to cart - ${newComponent.compname} (${newComponent.skuid})');
+          print(
+              'DEBUG: Current cart size: ${componentcontroller.Cartcomponents.length}');
+        });
+      }
+    } catch (e) {
+      print('DEBUG: Error processing barcode: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error processing barcode: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -216,7 +210,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
         print('DEBUG: Camera permission denied');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Camera permission is required for scanning'),
               backgroundColor: Colors.red,
             ),
@@ -227,7 +221,10 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
       print('DEBUG: Camera permission granted, starting scan');
 
-      if (!mounted) return;
+       if (!mounted) return;
+
+      _isProcessingScan = false; // reset guard for this new scan attempt
+
 
       // Show scanner in a dialog
       showDialog(
@@ -247,8 +244,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
               children: [
                 // Header
                 Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
                     color: Color(0xff19335A),
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
@@ -261,7 +258,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       Text(
                         'Scan Barcode',
                         style: GoogleFonts.lato(
-                          textStyle: TextStyle(
+                          textStyle: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -269,7 +266,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.close, color: Colors.white),
+                        icon: const Icon(Icons.close, color: Colors.white),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -279,14 +276,16 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 Expanded(
                   child: Stack(
                     children: [
-                      MobileScanner(
+                        MobileScanner(
                         onDetect: (capture) {
+                          if (_isProcessingScan) return;
                           final List<Barcode> barcodes = capture.barcodes;
                           if (barcodes.isNotEmpty) {
                             final String? code = barcodes.first.rawValue;
                             if (code != null) {
                               final String normalized = code.trim();
                               if (normalized.isEmpty) return;
+                              _isProcessingScan = true;
                               print('DEBUG: Barcode detected: $normalized');
                               Navigator.pop(context); // Close scanner
                               _processBarcode(normalized);
@@ -303,7 +302,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        margin: EdgeInsets.all(40),
+                        margin: const EdgeInsets.all(40),
                       ),
                       // Corner markers
                       Positioned(
@@ -312,7 +311,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         child: Container(
                           width: 20,
                           height: 20,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             border: Border(
                               top: BorderSide(color: Colors.white, width: 3),
                               left: BorderSide(color: Colors.white, width: 3),
@@ -326,7 +325,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         child: Container(
                           width: 20,
                           height: 20,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             border: Border(
                               top: BorderSide(color: Colors.white, width: 3),
                               right: BorderSide(color: Colors.white, width: 3),
@@ -340,7 +339,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         child: Container(
                           width: 20,
                           height: 20,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             border: Border(
                               bottom: BorderSide(color: Colors.white, width: 3),
                               left: BorderSide(color: Colors.white, width: 3),
@@ -354,7 +353,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         child: Container(
                           width: 20,
                           height: 20,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             border: Border(
                               bottom: BorderSide(color: Colors.white, width: 3),
                               right: BorderSide(color: Colors.white, width: 3),
@@ -390,7 +389,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       body: Container(
         height: MediaQuery.of(context).size.height * 1,
         width: MediaQuery.of(context).size.width * 1,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
               Color.fromARGB(255, 154, 210, 255),
@@ -416,12 +415,12 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         color: Color(0xff19335A),
                         borderRadius: BorderRadius.all(Radius.circular(8)),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       alignment: Alignment.center,
                       child: Text(
                         'Scan to issue component',
                         style: GoogleFonts.lato(
-                          textStyle: TextStyle(
+                          textStyle: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
                             fontSize: 18,
@@ -430,17 +429,17 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   TextButton(
                     onPressed: () {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
                           return AlertDialog(
-                            title: Text('Enter Transaction ID'),
+                            title: const Text('Enter Transaction ID'),
                             content: TextField(
                               controller: returnTransactionIdController,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 hintText: 'Transaction ID',
                               ),
                             ),
@@ -449,7 +448,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                 onPressed: () {
                                   Navigator.pop(context);
                                 },
-                                child: Text('Cancel'),
+                                child: const Text('Cancel'),
                               ),
                               TextButton(
                                 onPressed: () async {
@@ -464,7 +463,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                   Navigator.pop(context);
                                   returnTransactionIdController.clear();
                                 },
-                                child: Text('Submit'),
+                                child: const Text('Submit'),
                               ),
                             ],
                           );
@@ -477,12 +476,12 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         color: Color(0xff19335A),
                         borderRadius: BorderRadius.all(Radius.circular(8)),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       alignment: Alignment.center,
                       child: Text(
                         'Enter Return Transaction ID',
                         style: GoogleFonts.lato(
-                          textStyle: TextStyle(
+                          textStyle: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
                             fontSize: 18,
@@ -494,7 +493,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             // Scrollable list section
             Expanded(
               child: componentcontroller.Cartcomponents.isEmpty
@@ -505,25 +504,25 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           Icon(
                             Icons.inventory_2_outlined,
                             size: 80,
-                            color: Color(0xff19335A).withOpacity(0.3),
+                            color: const Color(0xff19335A).withValues(alpha: 0.3),
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
                             'No components added yet',
                             style: GoogleFonts.lato(
                               textStyle: TextStyle(
-                                color: Color(0xff19335A).withOpacity(0.6),
+                                color: const Color(0xff19335A).withValues(alpha: 0.6),
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             'Scan a barcode to add components to your cart',
                             style: GoogleFonts.lato(
                               textStyle: TextStyle(
-                                color: Color(0xff19335A).withOpacity(0.4),
+                                color: const Color(0xff19335A).withValues(alpha: 0.4),
                                 fontSize: 14,
                               ),
                             ),
@@ -532,7 +531,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       ),
                     )
                   : ListView.builder(
-                      padding: EdgeInsets.symmetric(horizontal: 15),
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
                       itemCount: componentcontroller.Cartcomponents.length,
                       itemBuilder: (ctx, index) {
                         final component =
@@ -545,9 +544,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   blurRadius: 10,
-                                  offset: Offset(0, 4),
+                                  offset: const Offset(0, 4),
                                   spreadRadius: 0,
                                 ),
                               ],
@@ -566,19 +565,19 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                         Text(
                                           component.skuid,
                                           style: GoogleFonts.lato(
-                                            textStyle: TextStyle(
+                                            textStyle: const TextStyle(
                                               color: Color(0xff19335A),
                                               fontSize: 16,
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
                                         ),
-                                        SizedBox(height: 4),
+                                        const SizedBox(height: 4),
                                         // Component name
                                         Text(
                                           component.compname,
                                           style: GoogleFonts.lato(
-                                            textStyle: TextStyle(
+                                            textStyle: const TextStyle(
                                               color: Colors.black87,
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
@@ -587,23 +586,23 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        SizedBox(height: 8),
+                                        const SizedBox(height: 8),
                                         // Quantity badge
                                         Container(
-                                          padding: EdgeInsets.symmetric(
+                                          padding: const EdgeInsets.symmetric(
                                             horizontal: 8,
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Color(0xff19335A)
-                                                .withOpacity(0.1),
+                                            color: const Color(0xff19335A)
+                                                .withValues(alpha: 0.1),
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
                                           child: Text(
                                             'Qty: ${component.Quantity}',
                                             style: GoogleFonts.lato(
-                                              textStyle: TextStyle(
+                                              textStyle: const TextStyle(
                                                 color: Color(0xff19335A),
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
@@ -617,7 +616,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                   // Delete button
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.red.withOpacity(0.1),
+                                      color: Colors.red.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: IconButton(
@@ -628,7 +627,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                         });
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
-                                          SnackBar(
+                                          const SnackBar(
                                             content: Text(
                                                 'Component removed from cart'),
                                             backgroundColor: Colors.red,
@@ -637,13 +636,13 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                           ),
                                         );
                                       },
-                                      icon: Icon(
+                                      icon: const Icon(
                                         Icons.delete_outline,
                                         color: Colors.red,
                                         size: 20,
                                       ),
-                                      padding: EdgeInsets.all(8),
-                                      constraints: BoxConstraints(
+                                      padding: const EdgeInsets.all(8),
+                                      constraints: const BoxConstraints(
                                         minWidth: 36,
                                         minHeight: 36,
                                       ),
@@ -659,18 +658,18 @@ class _TransactionScreenState extends State<TransactionScreen> {
             ),
             // Fixed footer section
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.only(
+                color: Colors.white.withValues(alpha: 0.9),
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
-                    offset: Offset(0, -2),
+                    offset: const Offset(0, -2),
                     spreadRadius: 0,
                   ),
                 ],
@@ -686,19 +685,19 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         Text(
                           'Cart Summary',
                           style: GoogleFonts.lato(
-                            textStyle: TextStyle(
+                            textStyle: const TextStyle(
                               color: Color(0xff19335A),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           '${componentcontroller.Cartcomponents.length} component${componentcontroller.Cartcomponents.length == 1 ? '' : 's'}',
                           style: GoogleFonts.lato(
                             textStyle: TextStyle(
-                              color: Color(0xff19335A).withOpacity(0.7),
+                              color: const Color(0xff19335A).withValues(alpha: 0.7),
                               fontSize: 12,
                             ),
                           ),
@@ -711,8 +710,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Color(0xff19335A),
-                          Color(0xff19335A).withOpacity(0.8),
+                          const Color(0xff19335A),
+                          const Color(0xff19335A).withValues(alpha: 0.8),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -720,9 +719,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Color(0xff19335A).withOpacity(0.3),
+                          color: const Color(0xff19335A).withValues(alpha: 0.3),
                           blurRadius: 8,
-                          offset: Offset(0, 2),
+                          offset: const Offset(0, 2),
                           spreadRadius: 0,
                         ),
                       ],
@@ -736,25 +735,25 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => Cartscreen()));
+                                  builder: (context) => const Cartscreen()));
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: Padding(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 10),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.shopping_cart_outlined,
                                 color: Colors.white,
                                 size: 18,
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Text(
                                 'View Cart',
                                 style: GoogleFonts.lato(
-                                  textStyle: TextStyle(
+                                  textStyle: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 14,

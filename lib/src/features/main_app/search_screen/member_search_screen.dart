@@ -211,7 +211,7 @@ class MemberController extends GetxController {
 }
 
 class MemberSearchScreen extends StatefulWidget {
-  const MemberSearchScreen({Key? key}) : super(key: key);
+  const MemberSearchScreen({super.key});
 
   @override
   State<MemberSearchScreen> createState() => _MemberSearchScreenState();

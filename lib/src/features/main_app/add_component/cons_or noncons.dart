@@ -6,13 +6,13 @@ import 'package:inventory/src/features/main_app/add_component/chooseOption.dart'
 
 Future<dynamic> ConsOrNonCons(BuildContext context) {
   return showModalBottomSheet(
-    shape: RoundedRectangleBorder(
+    shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(60), // Adjust the radius as needed
       ),
     ),
     sheetAnimationStyle:
-        AnimationStyle(curve: Curves.bounceInOut, duration: Durations.long4),
+        const AnimationStyle(curve: Curves.bounceInOut, duration: Durations.long4),
     context: context,
     useSafeArea: true,
     constraints: BoxConstraints(
@@ -20,7 +20,7 @@ Future<dynamic> ConsOrNonCons(BuildContext context) {
         maxWidth: MediaQuery.of(context).size.width * 1),
     isScrollControlled: true,
     elevation: 10,
-    backgroundColor: Color.fromARGB(255, 172, 209, 242),
+    backgroundColor: const Color.fromARGB(255, 172, 209, 242),
     builder: (BuildContext context) => Chooseoption(),
   );
 }
