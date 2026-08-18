@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 
 class Member {
   final String name;
@@ -207,17 +208,24 @@ class _MemberSearchScreenState extends State<MemberSearchScreen> {
 
   Future<void> _editPhoneNumber() async {
     if (_foundMember == null) return;
+    final isDark = CAppTheme.isDark(context);
     final phoneController = TextEditingController(text: _foundMember!.phone);
 
     final bool? updated = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+          ),
+        ),
         title: Text(
           'Edit Phone Number',
           style: GoogleFonts.montserrat(
             fontWeight: FontWeight.bold,
-            color: const Color(0xff19335A),
+            color: isDark ? Colors.white : const Color(0xff19335A),
             fontSize: 16,
           ),
         ),
@@ -227,17 +235,39 @@ class _MemberSearchScreenState extends State<MemberSearchScreen> {
           children: [
             Text(
               'Update contact number for ${_foundMember!.name}:',
-              style: GoogleFonts.lato(fontSize: 13, color: Colors.grey[700]),
+              style: GoogleFonts.lato(
+                fontSize: 13,
+                color: isDark ? const Color(0xff94A3B8) : Colors.grey[700],
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: phoneController,
               keyboardType: TextInputType.phone,
+              style: GoogleFonts.lato(
+                color: isDark ? Colors.white : Colors.black87,
+              ),
               decoration: InputDecoration(
                 labelText: 'Phone Number',
+                labelStyle: TextStyle(
+                  color: isDark ? const Color(0xff94A3B8) : Colors.grey[700],
+                ),
                 hintText: 'Enter 10-digit number',
-                prefixIcon: const Icon(Icons.phone_rounded, color: Color(0xff19335A)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                hintStyle: TextStyle(
+                  color: isDark ? const Color(0xff64748B) : Colors.grey[400],
+                ),
+                prefixIcon: Icon(
+                  Icons.phone_rounded,
+                  color: isDark ? const Color(0xff38BDF8) : const Color(0xff19335A),
+                ),
+                filled: true,
+                fillColor: isDark ? const Color(0xff0F172A) : Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                    color: isDark ? const Color(0xff334155) : const Color(0xffCBD5E1),
+                  ),
+                ),
               ),
             ),
           ],
@@ -245,11 +275,16 @@ class _MemberSearchScreenState extends State<MemberSearchScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx, false),
-            child: Text('Cancel', style: GoogleFonts.lato(color: Colors.grey[700])),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.lato(
+                color: isDark ? const Color(0xff94A3B8) : Colors.grey[700],
+              ),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xff19335A),
+              backgroundColor: isDark ? const Color(0xff0284C7) : const Color(0xff19335A),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -295,10 +330,15 @@ class _MemberSearchScreenState extends State<MemberSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Scaffold(
-      backgroundColor: const Color(0xffF4F7FB),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xff19335A),
+        backgroundColor: isDark ? const Color(0xff0F172A) : const Color(0xff19335A),
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -314,106 +354,115 @@ class _MemberSearchScreenState extends State<MemberSearchScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Search & QR Scan Box
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xffE2EAF4)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Lookup Member',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xff19335A),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: CAppTheme.bgGradient(context),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search & QR Scan Box
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: CAppTheme.cardDecoration(context, radius: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Lookup Member',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: primaryText,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: const Color(0xffF4F7FB),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xffE2EAF4)),
-                          ),
-                          child: TextField(
-                            controller: _queryController,
-                            onSubmitted: _searchMember,
-                            style: GoogleFonts.lato(fontSize: 13),
-                            decoration: InputDecoration(
-                              hintText: 'Enter Email ID or Login ID...',
-                              hintStyle: GoogleFonts.lato(fontSize: 12, color: Colors.grey[500]),
-                              prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xff19335A)),
-                              suffixIcon: _queryController.text.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 16, color: Colors.grey),
-                                      onPressed: () {
-                                        _queryController.clear();
-                                        setState(() {});
-                                      },
-                                    )
-                                  : null,
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xff0F172A) : const Color(0xffF4F7FB),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+                              ),
+                            ),
+                            child: TextField(
+                              controller: _queryController,
+                              onSubmitted: _searchMember,
+                              style: GoogleFonts.lato(
+                                fontSize: 13,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Enter Email ID or Login ID...',
+                                hintStyle: GoogleFonts.lato(
+                                  fontSize: 12,
+                                  color: isDark ? const Color(0xff64748B) : Colors.grey[500],
+                                ),
+                                prefixIcon: Icon(Icons.search_rounded, size: 18, color: accentColor),
+                                suffixIcon: _queryController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: Icon(Icons.clear, size: 16, color: secondaryText),
+                                        onPressed: () {
+                                          _queryController.clear();
+                                          setState(() {});
+                                        },
+                                      )
+                                    : null,
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      // QR Scan Button
-                      InkWell(
-                        onTap: _openQrScanner,
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          height: 44,
-                          width: 44,
-                          decoration: BoxDecoration(
-                            color: const Color(0xff19335A).withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xff19335A).withValues(alpha: 0.2)),
-                          ),
-                          child: const Icon(
-                            Icons.qr_code_scanner_rounded,
-                            color: Color(0xff19335A),
-                            size: 20,
+                        const SizedBox(width: 8),
+                        // QR Scan Button
+                        InkWell(
+                          onTap: _openQrScanner,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            height: 44,
+                            width: 44,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xff0284C7).withValues(alpha: 0.2)
+                                  : const Color(0xff19335A).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xff38BDF8).withValues(alpha: 0.4)
+                                    : const Color(0xff19335A).withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.qr_code_scanner_rounded,
+                              color: accentColor,
+                              size: 20,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 42,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : () => _searchMember(_queryController.text),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff19335A),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 0,
-                      ),
-                      child: _isLoading
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 42,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : () => _searchMember(_queryController.text),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isDark ? const Color(0xff0284C7) : const Color(0xff19335A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          elevation: 0,
+                        ),
+                        child: _isLoading
                           ? const SizedBox(
                               height: 18,
                               width: 18,
@@ -423,196 +472,196 @@ class _MemberSearchScreenState extends State<MemberSearchScreen> {
                               'Search Member',
                               style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 13),
                             ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Results Section
-            if (_isLoading)
-              const Padding(
-                padding: EdgeInsets.all(40.0),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xff19335A)),
+              // Results Section
+              if (_isLoading)
+                Padding(
+                  padding: const EdgeInsets.all(40.0),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                    ),
                   ),
-                ),
-              )
-            else if (_hasSearched && _foundMember == null)
-              // NOT A MEMBER STATE
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.red.withValues(alpha: 0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
+                )
+              else if (_hasSearched && _foundMember == null)
+                // NOT A MEMBER STATE
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xff1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                      child: const Icon(Icons.person_off_rounded, size: 40, color: Colors.red),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'Not a ISA member',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red[800],
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'No registered record found matching "$_searchedQuery". Please verify the email address or ISA Login ID.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.lato(fontSize: 13, color: Colors.grey[700], height: 1.4),
-                    ),
-                  ],
-                ),
-              )
-            else if (_foundMember != null)
-              // MEMBER FOUND CARD
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xff19335A).withValues(alpha: 0.15)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xff19335A).withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Member Profile Header
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 28,
-                          backgroundColor: const Color(0xff19335A).withValues(alpha: 0.1),
-                          backgroundImage: _foundMember!.profileImageUrl != null &&
-                                  _foundMember!.profileImageUrl!.isNotEmpty
-                              ? NetworkImage(_foundMember!.profileImageUrl!)
-                              : null,
-                          child: _foundMember!.profileImageUrl == null ||
-                                  _foundMember!.profileImageUrl!.isEmpty
-                              ? const Icon(Icons.person_rounded, size: 30, color: Color(0xff19335A))
-                              : null,
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _foundMember!.name,
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xff19335A),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'VERIFIED ISA MEMBER',
+                        child: const Icon(Icons.person_off_rounded, size: 40, color: Colors.red),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Not a ISA member',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? const Color(0xffF87171) : Colors.red[800],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'No registered record found matching "$_searchedQuery". Please verify the email address or ISA Login ID.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.lato(
+                          fontSize: 13,
+                          color: secondaryText,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_foundMember != null)
+                // MEMBER FOUND CARD
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: CAppTheme.cardDecoration(context, radius: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Member Profile Header
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: accentColor.withValues(alpha: 0.1),
+                            backgroundImage: _foundMember!.profileImageUrl != null &&
+                                    _foundMember!.profileImageUrl!.isNotEmpty
+                                ? NetworkImage(_foundMember!.profileImageUrl!)
+                                : null,
+                            child: _foundMember!.profileImageUrl == null ||
+                                    _foundMember!.profileImageUrl!.isEmpty
+                                ? Icon(Icons.person_rounded, size: 30, color: accentColor)
+                                : null,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _foundMember!.name,
                                   style: GoogleFonts.montserrat(
-                                    fontSize: 10,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.green[800],
+                                    color: primaryText,
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 2),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'VERIFIED ISA MEMBER',
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? const Color(0xff4ADE80) : Colors.green[800],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+                      Divider(height: 1, color: isDark ? const Color(0xff334155) : const Color(0xffE2E8F0)),
+                      const SizedBox(height: 14),
+
+                      // Details
+                      _buildInfoRow(Icons.badge_rounded, 'Login ID', _foundMember!.id, context),
+                      const SizedBox(height: 10),
+                      _buildInfoRow(Icons.school_rounded, 'Division / Class', _foundMember!.division, context),
+                      const SizedBox(height: 10),
+                      _buildInfoRow(Icons.email_rounded, 'Email Address', _foundMember!.email, context),
+                      const SizedBox(height: 10),
+                      _buildInfoRow(
+                        Icons.phone_rounded,
+                        'Phone Number',
+                        _foundMember!.phone.isNotEmpty ? _foundMember!.phone : 'No phone registered',
+                        context,
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // Edit Phone Number Action
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _editPhoneNumber,
+                          icon: const Icon(Icons.edit_rounded, size: 16),
+                          label: Text(
+                            'Edit Phone Number',
+                            style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: accentColor,
+                            side: BorderSide(color: accentColor, width: 1.2),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                         ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-                    const Divider(height: 1),
-                    const SizedBox(height: 14),
-
-                    // Details
-                    _buildInfoRow(Icons.badge_rounded, 'Login ID', _foundMember!.id),
-                    const SizedBox(height: 10),
-                    _buildInfoRow(Icons.school_rounded, 'Division / Class', _foundMember!.division),
-                    const SizedBox(height: 10),
-                    _buildInfoRow(Icons.email_rounded, 'Email Address', _foundMember!.email),
-                    const SizedBox(height: 10),
-                    _buildInfoRow(
-                      Icons.phone_rounded,
-                      'Phone Number',
-                      _foundMember!.phone.isNotEmpty ? _foundMember!.phone : 'No phone registered',
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    // Edit Phone Number Action
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _editPhoneNumber,
-                        icon: const Icon(Icons.edit_rounded, size: 16),
-                        label: Text(
-                          'Edit Phone Number',
-                          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xff19335A),
-                          side: const BorderSide(color: Color(0xff19335A), width: 1.2),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
+  Widget _buildInfoRow(IconData icon, String label, String value, BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: const Color(0xff19335A)),
+        Icon(icon, size: 16, color: accentColor),
         const SizedBox(width: 8),
         SizedBox(
           width: 110,
           child: Text(
             label,
-            style: GoogleFonts.lato(fontSize: 12.5, color: Colors.grey[600]),
+            style: GoogleFonts.lato(fontSize: 12.5, color: secondaryText),
           ),
         ),
         Expanded(
@@ -621,7 +670,7 @@ class _MemberSearchScreenState extends State<MemberSearchScreen> {
             style: GoogleFonts.montserrat(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
-              color: const Color(0xff19335A),
+              color: primaryText,
             ),
           ),
         ),

@@ -453,7 +453,7 @@ class ReceiptPdfService {
                             pw.Container(
                               width: 8,
                               height: 8,
-                              decoration: const pw.BoxDecoration(
+                              decoration: pw.BoxDecoration(
                                 color: PdfColor.fromHex('#16A34A'),
                                 shape: pw.BoxShape.circle,
                               ),

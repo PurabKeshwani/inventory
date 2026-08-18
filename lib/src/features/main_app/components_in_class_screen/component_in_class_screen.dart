@@ -8,6 +8,7 @@ import 'package:inventory/src/data/outputComponent.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/authentication/controllers/selectquerycontroller.dart';
 import 'package:inventory/src/utils/barcode_util.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ComponentInClassScreen extends StatefulWidget {
@@ -76,17 +77,24 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
     final sku = item.skuid;
     final box = item.boxNo;
     final isAvailable = item.stock > 0;
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
 
     showDialog(
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
         child: Container(
           padding: const EdgeInsets.all(24),
           constraints: const BoxConstraints(maxWidth: 400),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xff1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -99,11 +107,11 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                     style: GoogleFonts.montserrat(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xff19335A),
+                      color: primaryText,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: Icon(Icons.close, color: secondaryText),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -114,7 +122,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                 style: GoogleFonts.lato(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: primaryText,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -125,15 +133,18 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: isDark ? const Color(0xff0F172A) : Colors.grey[200],
                       borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isDark ? const Color(0xff334155) : Colors.transparent,
+                      ),
                     ),
                     child: Text(
                       'Box: $box',
                       style: GoogleFonts.lato(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: isDark ? const Color(0xffCBD5E1) : Colors.grey[800],
                       ),
                     ),
                   ),
@@ -366,6 +377,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
   }
 
   Future<void> _showEditFullComponentDialog(Outputcomponent item) async {
+    final isDark = CAppTheme.isDark(context);
     final boxController = TextEditingController(text: item.boxNo);
     final stockController = TextEditingController(text: item.stock.toString());
     final noteController = TextEditingController(text: item.warning?.toString() ?? '');
@@ -373,12 +385,18 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
     final bool? saved = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+          ),
+        ),
         title: Text(
           'Edit Component (${item.skuid})',
           style: GoogleFonts.montserrat(
             fontWeight: FontWeight.bold,
-            color: const Color(0xff19335A),
+            color: isDark ? Colors.white : const Color(0xff19335A),
             fontSize: 16,
           ),
         ),
@@ -389,27 +407,48 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
             children: [
               TextField(
                 controller: boxController,
+                style: GoogleFonts.lato(color: isDark ? Colors.white : Colors.black87),
                 decoration: InputDecoration(
                   labelText: 'Box Number',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  labelStyle: TextStyle(color: isDark ? const Color(0xff94A3B8) : Colors.grey[700]),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xff0F172A) : Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: isDark ? const Color(0xff334155) : const Color(0xffCBD5E1)),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: stockController,
                 keyboardType: TextInputType.number,
+                style: GoogleFonts.lato(color: isDark ? Colors.white : Colors.black87),
                 decoration: InputDecoration(
                   labelText: 'Stock Quantity',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  labelStyle: TextStyle(color: isDark ? const Color(0xff94A3B8) : Colors.grey[700]),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xff0F172A) : Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: isDark ? const Color(0xff334155) : const Color(0xffCBD5E1)),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: noteController,
                 maxLines: 2,
+                style: GoogleFonts.lato(color: isDark ? Colors.white : Colors.black87),
                 decoration: InputDecoration(
                   labelText: 'Warning / Notes',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  labelStyle: TextStyle(color: isDark ? const Color(0xff94A3B8) : Colors.grey[700]),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xff0F172A) : Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: isDark ? const Color(0xff334155) : const Color(0xffCBD5E1)),
+                  ),
                 ),
               ),
             ],
@@ -418,11 +457,16 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx, false),
-            child: Text('Cancel', style: GoogleFonts.lato(color: Colors.grey[700])),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.lato(
+                color: isDark ? const Color(0xff94A3B8) : Colors.grey[700],
+              ),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xff19335A),
+              backgroundColor: isDark ? const Color(0xff0284C7) : const Color(0xff19335A),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -544,10 +588,15 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Scaffold(
-      backgroundColor: const Color(0xffF7F8FC),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xff19335A),
+        backgroundColor: isDark ? const Color(0xff0F172A) : const Color(0xff19335A),
         elevation: 0,
         title: Text(
           widget.component.name,
@@ -558,386 +607,403 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        child: Obx(() {
-          final allItems = selectquerycontroller.newres;
-          final totalCount = allItems.length;
-          final availableCount =
-              allItems.where((i) => (i.stock ?? 0) > 0).length;
-          final issuedCount = totalCount - availableCount;
-          final displayedItems = _filteredList;
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: CAppTheme.bgGradient(context),
+        ),
+        child: RefreshIndicator(
+          onRefresh: _refreshData,
+          color: accentColor,
+          child: Obx(() {
+            final allItems = selectquerycontroller.newres;
+            final totalCount = allItems.length;
+            final availableCount =
+                allItems.where((i) => (i.stock ?? 0) > 0).length;
+            final issuedCount = totalCount - availableCount;
+            final displayedItems = _filteredList;
 
-          return CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // Summary Cards
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildMetricCard(
-                              label: 'Total Units',
-                              count: totalCount.toString(),
-                              color: const Color(0xff19335A),
-                              icon: Icons.inventory_2_rounded,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildMetricCard(
-                              label: 'Available',
-                              count: availableCount.toString(),
-                              color: Colors.green[700]!,
-                              icon: Icons.check_circle_rounded,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildMetricCard(
-                              label: 'Issued',
-                              count: issuedCount.toString(),
-                              color: Colors.red[700]!,
-                              icon: Icons.output_rounded,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Search & Filter Bar
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey[300]!),
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // Summary Cards
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildMetricCard(
+                                label: 'Total Units',
+                                count: totalCount.toString(),
+                                color: accentColor,
+                                icon: Icons.inventory_2_rounded,
+                                isDark: isDark,
                               ),
-                              child: TextField(
-                                controller: searchController,
-                                onChanged: (_) => setState(() {}),
-                                decoration: InputDecoration(
-                                  hintText: 'Search SKU or Box...',
-                                  hintStyle: GoogleFonts.lato(
-                                      fontSize: 13, color: Colors.grey),
-                                  prefixIcon: const Icon(Icons.search,
-                                      size: 20, color: Color(0xff19335A)),
-                                  suffixIcon: searchController.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear, size: 18),
-                                          onPressed: () {
-                                            searchController.clear();
-                                            setState(() {});
-                                          },
-                                        )
-                                      : null,
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 12),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildMetricCard(
+                                label: 'Available',
+                                count: availableCount.toString(),
+                                color: isDark ? const Color(0xff4ADE80) : Colors.green[700]!,
+                                icon: Icons.check_circle_rounded,
+                                isDark: isDark,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildMetricCard(
+                                label: 'Issued',
+                                count: issuedCount.toString(),
+                                color: isDark ? const Color(0xffF87171) : Colors.red[700]!,
+                                icon: Icons.output_rounded,
+                                isDark: isDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Search & Filter Bar
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 44,
+                                decoration: CAppTheme.cardDecoration(context, radius: 10),
+                                child: TextField(
+                                  controller: searchController,
+                                  onChanged: (_) => setState(() {}),
+                                  style: GoogleFonts.lato(
+                                    fontSize: 13,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search SKU or Box...',
+                                    hintStyle: GoogleFonts.lato(
+                                      fontSize: 13,
+                                      color: isDark ? const Color(0xff64748B) : Colors.grey,
+                                    ),
+                                    prefixIcon: Icon(Icons.search, size: 20, color: accentColor),
+                                    suffixIcon: searchController.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: Icon(Icons.clear, size: 18, color: secondaryText),
+                                            onPressed: () {
+                                              searchController.clear();
+                                              setState(() {});
+                                            },
+                                          )
+                                        : null,
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 12,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Status Filter Chips
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildFilterChip('all', 'All ($totalCount)'),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('available', 'Available ($availableCount)',
-                                color: Colors.green),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('issued', 'Issued ($issuedCount)',
-                                color: Colors.red),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 14),
+                        const SizedBox(height: 10),
 
-                      // Table Header Info
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Components & Inventory Units',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xff19335A),
-                            ),
+                        // Status Filter Chips
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildFilterChip('all', 'All ($totalCount)', isDark: isDark),
+                              const SizedBox(width: 8),
+                              _buildFilterChip('available', 'Available ($availableCount)',
+                                  color: isDark ? const Color(0xff4ADE80) : Colors.green,
+                                  isDark: isDark),
+                              const SizedBox(width: 8),
+                              _buildFilterChip('issued', 'Issued ($issuedCount)',
+                                  color: isDark ? const Color(0xffF87171) : Colors.red,
+                                  isDark: isDark),
+                            ],
                           ),
-                          Text(
-                            'Tap row to view/download barcode',
-                            style: GoogleFonts.lato(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                        ),
+                        const SizedBox(height: 14),
 
-              // Table Content
-              if (selectquerycontroller.isLoading.value)
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xff19335A),
-                    ),
-                  ),
-                )
-              else if (displayedItems.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.inventory_rounded,
-                            size: 54, color: Colors.grey[400]),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No components found',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
+                        // Table Header Info
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Components & Inventory Units',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: primaryText,
+                              ),
+                            ),
+                            Text(
+                              'Tap row to view barcode',
+                              style: GoogleFonts.lato(
+                                fontSize: 11,
+                                color: secondaryText,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                )
-              else
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                ),
+
+                // Table Content
+                if (selectquerycontroller.isLoading.value)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: accentColor,
                       ),
-                      clipBehavior: Clip.antiAlias,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          columnSpacing: 24,
-                          horizontalMargin: 16,
-                          headingRowColor: WidgetStateProperty.all(
-                            const Color(0xff19335A),
+                    ),
+                  )
+                else if (displayedItems.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.inventory_rounded,
+                              size: 54, color: isDark ? const Color(0xff475569) : Colors.grey[400]),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No components found',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? const Color(0xffCBD5E1) : Colors.grey[700],
+                            ),
                           ),
-                          headingTextStyle: GoogleFonts.montserrat(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          dataRowMinHeight: 48,
-                          dataRowMaxHeight: 56,
-                          columns: const [
-                            DataColumn(label: Text('SKU ID')),
-                            DataColumn(label: Text('Box No')),
-                            DataColumn(label: Text('Status')),
-                            DataColumn(label: Text('Stock')),
-                            DataColumn(label: Text('Warning / Note')),
-                            DataColumn(label: Text('Barcode')),
-                          ],
-                          rows: displayedItems.map((item) {
-                            final isAvailable = item.stock > 0;
-                            return DataRow(
-                              onSelectChanged: (_) => _showBarcodeDialog(item),
-                              cells: [
-                                DataCell(
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () => _showBarcodeDialog(item),
-                                    onLongPress: () => _showComponentActionsBottomSheet(item),
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(maxWidth: 180),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.qr_code_2_rounded,
-                                              size: 18, color: Color(0xff19335A)),
-                                          const SizedBox(width: 6),
-                                          Flexible(
-                                            child: Text(
-                                              item.skuid,
-                                              style: GoogleFonts.sourceCodePro(
-                                                fontWeight: FontWeight.w700,
-                                                color: const Color(0xff19335A),
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () => _showBarcodeDialog(item),
-                                    onLongPress: () => _showComponentActionsBottomSheet(item),
-                                    child: Text(
-                                      item.boxNo,
-                                      style: GoogleFonts.lato(fontWeight: FontWeight.w500),
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () => _showBarcodeDialog(item),
-                                    onLongPress: () => _showComponentActionsBottomSheet(item),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: isAvailable
-                                            ? Colors.green[50]
-                                            : Colors.red[50],
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: isAvailable
-                                              ? Colors.green
-                                              : Colors.red,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            isAvailable
-                                                ? Icons.check_circle_rounded
-                                                : Icons.cancel_rounded,
-                                            size: 14,
-                                            color: isAvailable
-                                                ? Colors.green[700]
-                                                : Colors.red[700],
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            isAvailable ? 'Available' : 'Issued',
-                                            style: GoogleFonts.lato(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: isAvailable
-                                              ? Colors.green[800]
-                                              : Colors.red[800],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () => _showBarcodeDialog(item),
-                                    onLongPress: () => _showComponentActionsBottomSheet(item),
-                                    child: Text(
-                                      item.stock.toString(),
-                                      style: GoogleFonts.lato(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(maxWidth: 180),
-                                    child: InkWell(
-                                      onTap: () => _showEditFullComponentDialog(item),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        decoration: CAppTheme.cardDecoration(context, radius: 12),
+                        clipBehavior: Clip.antiAlias,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columnSpacing: 24,
+                            horizontalMargin: 16,
+                            headingRowColor: WidgetStateProperty.all(
+                              isDark ? const Color(0xff0F172A) : const Color(0xff19335A),
+                            ),
+                            headingTextStyle: GoogleFonts.montserrat(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            dataRowMinHeight: 48,
+                            dataRowMaxHeight: 56,
+                            columns: const [
+                              DataColumn(label: Text('SKU ID')),
+                              DataColumn(label: Text('Box No')),
+                              DataColumn(label: Text('Status')),
+                              DataColumn(label: Text('Stock')),
+                              DataColumn(label: Text('Warning / Note')),
+                              DataColumn(label: Text('Barcode')),
+                            ],
+                            rows: displayedItems.map((item) {
+                              final isAvailable = item.stock > 0;
+                              return DataRow(
+                                onSelectChanged: (_) => _showBarcodeDialog(item),
+                                cells: [
+                                  DataCell(
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => _showBarcodeDialog(item),
                                       onLongPress: () => _showComponentActionsBottomSheet(item),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (item.warning != null &&
-                                              item.warning.toString().isNotEmpty) ...[
-                                            const Icon(Icons.warning_amber_rounded,
-                                                size: 16, color: Colors.orange),
-                                            const SizedBox(width: 4),
+                                      child: ConstrainedBox(
+                                        constraints: const BoxConstraints(maxWidth: 180),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.qr_code_2_rounded,
+                                                size: 18, color: accentColor),
+                                            const SizedBox(width: 6),
                                             Flexible(
                                               child: Text(
-                                                item.warning.toString(),
-                                                style: GoogleFonts.lato(
-                                                    color: Colors.orange[900],
-                                                    fontWeight: FontWeight.w600),
+                                                item.skuid,
+                                                style: GoogleFonts.sourceCodePro(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: primaryText,
+                                                ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                          ] else ...[
-                                            Text(
-                                              'Add note',
-                                              style: GoogleFonts.lato(
-                                                  fontSize: 12,
-                                                  color: Colors.grey[500],
-                                                  fontStyle: FontStyle.italic),
-                                            ),
                                           ],
-                                          const SizedBox(width: 4),
-                                          const Icon(Icons.edit,
-                                              size: 12, color: Colors.grey),
-                                        ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                DataCell(
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.qr_code_rounded,
-                                            color: Color(0xff19335A)),
-                                        tooltip: 'View Barcode (Tap)',
-                                        onPressed: () => _showBarcodeDialog(item),
+                                  DataCell(
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => _showBarcodeDialog(item),
+                                      onLongPress: () => _showComponentActionsBottomSheet(item),
+                                      child: Text(
+                                        item.boxNo,
+                                        style: GoogleFonts.lato(
+                                          fontWeight: FontWeight.w500,
+                                          color: isDark ? const Color(0xffCBD5E1) : Colors.black87,
+                                        ),
                                       ),
-                                      IconButton(
-                                        icon: const Icon(Icons.more_vert_rounded,
-                                            color: Colors.grey),
-                                        tooltip: 'Edit / Delete (Long Press)',
-                                        onPressed: () => _showComponentActionsBottomSheet(item),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
+                                  DataCell(
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => _showBarcodeDialog(item),
+                                      onLongPress: () => _showComponentActionsBottomSheet(item),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isAvailable
+                                              ? (isDark ? Colors.green.withOpacity(0.2) : Colors.green[50])
+                                              : (isDark ? Colors.red.withOpacity(0.2) : Colors.red[50]),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: isAvailable
+                                                ? (isDark ? Colors.green.withOpacity(0.4) : Colors.green)
+                                                : (isDark ? Colors.red.withOpacity(0.4) : Colors.red),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              isAvailable
+                                                  ? Icons.check_circle_rounded
+                                                  : Icons.cancel_rounded,
+                                              size: 14,
+                                              color: isAvailable
+                                                  ? (isDark ? const Color(0xff4ADE80) : Colors.green[700])
+                                                  : (isDark ? const Color(0xffF87171) : Colors.red[700]),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              isAvailable ? 'Available' : 'Issued',
+                                              style: GoogleFonts.lato(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                color: isAvailable
+                                                    ? (isDark ? const Color(0xff4ADE80) : Colors.green[800])
+                                                    : (isDark ? const Color(0xffF87171) : Colors.red[800]),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => _showBarcodeDialog(item),
+                                      onLongPress: () => _showComponentActionsBottomSheet(item),
+                                      child: Text(
+                                        item.stock.toString(),
+                                        style: GoogleFonts.lato(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: isDark ? const Color(0xffF1F5F9) : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(maxWidth: 180),
+                                      child: InkWell(
+                                        onTap: () => _showEditFullComponentDialog(item),
+                                        onLongPress: () => _showComponentActionsBottomSheet(item),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (item.warning != null &&
+                                                item.warning.toString().isNotEmpty) ...[
+                                              const Icon(Icons.warning_amber_rounded,
+                                                  size: 16, color: Colors.orange),
+                                              const SizedBox(width: 4),
+                                              Flexible(
+                                                child: Text(
+                                                  item.warning.toString(),
+                                                  style: GoogleFonts.lato(
+                                                      color: Colors.orange[400],
+                                                      fontWeight: FontWeight.w600),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ] else ...[
+                                              Text(
+                                                'Add note',
+                                                style: GoogleFonts.lato(
+                                                    fontSize: 12,
+                                                    color: secondaryText,
+                                                    fontStyle: FontStyle.italic),
+                                              ),
+                                            ],
+                                            const SizedBox(width: 4),
+                                            Icon(Icons.edit,
+                                                size: 12, color: secondaryText),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: Icon(Icons.qr_code_rounded,
+                                              color: accentColor),
+                                          tooltip: 'View Barcode (Tap)',
+                                          onPressed: () => _showBarcodeDialog(item),
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.more_vert_rounded,
+                                              color: secondaryText),
+                                          tooltip: 'Edit / Delete (Long Press)',
+                                          onPressed: () => _showComponentActionsBottomSheet(item),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 40),
-              ),
-            ],
-          );
-        }),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 40),
+                ),
+              ],
+            );
+          }),
+        ),
       ),
     );
   }
@@ -947,16 +1013,19 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
     required String count,
     required Color color,
     required IconData icon,
+    bool isDark = false,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xff1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(
+          color: isDark ? const Color(0xff334155) : color.withOpacity(0.2),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.03),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -982,7 +1051,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                   label,
                   style: GoogleFonts.lato(
                     fontSize: 11,
-                    color: Colors.grey[600],
+                    color: isDark ? const Color(0xff94A3B8) : Colors.grey[600],
                   ),
                 ),
               ],
@@ -993,20 +1062,25 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
     );
   }
 
-  Widget _buildFilterChip(String filterKey, String label, {Color? color}) {
+  Widget _buildFilterChip(String filterKey, String label, {Color? color, bool isDark = false}) {
     final isSelected = _filterStatus == filterKey;
+    final activeColor = color ?? (isDark ? const Color(0xff0284C7) : const Color(0xff19335A));
+
     return ChoiceChip(
       label: Text(
         label,
         style: GoogleFonts.lato(
           fontSize: 12,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Colors.white : (color ?? const Color(0xff19335A)),
+          color: isSelected ? Colors.white : (isDark ? const Color(0xff94A3B8) : (color ?? const Color(0xff19335A))),
         ),
       ),
       selected: isSelected,
-      selectedColor: color ?? const Color(0xff19335A),
-      backgroundColor: Colors.white,
+      selectedColor: activeColor,
+      backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
+      side: BorderSide(
+        color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+      ),
       onSelected: (_) {
         setState(() {
           _filterStatus = filterKey;

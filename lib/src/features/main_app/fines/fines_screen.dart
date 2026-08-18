@@ -9,6 +9,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'models/fine_model.dart';
 import 'services/fine_service.dart';
 import 'fine_receipt_dialog.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 
 class FinesScreen extends StatefulWidget {
   const FinesScreen({super.key});
@@ -1449,26 +1450,24 @@ class _FinesScreenState extends State<FinesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xff19335A),
-        foregroundColor: Colors.white,
+        backgroundColor: accentColor,
+        foregroundColor: isDark ? const Color(0xff080E1A) : Colors.white,
         icon: const Icon(Icons.add),
         label: Text('Record Fine',
             style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
         onPressed: _showAddFineDialog,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 154, 210, 255),
-              Color.fromARGB(255, 213, 245, 252),
-              Color.fromARGB(255, 242, 254, 255),
-            ],
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-          ),
+        decoration: BoxDecoration(
+          gradient: CAppTheme.bgGradient(context),
         ),
         child: RefreshIndicator(
           onRefresh: () => _loadFines(forceRefresh: true),
@@ -1491,7 +1490,7 @@ class _FinesScreenState extends State<FinesScreen> {
                               style: GoogleFonts.montserrat(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xff19335A),
+                                color: primaryText,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1500,8 +1499,11 @@ class _FinesScreenState extends State<FinesScreen> {
                           // View Switcher (Spreadsheet Table vs Cards)
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: isDark ? const Color(0xff1E293B) : Colors.white,
                               borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isDark ? const Color(0xff334155) : Colors.transparent,
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.05),
@@ -1515,8 +1517,8 @@ class _FinesScreenState extends State<FinesScreen> {
                                   icon: Icon(
                                     Icons.table_chart_rounded,
                                     color: _isTableView
-                                        ? const Color(0xff19335A)
-                                        : Colors.grey,
+                                        ? accentColor
+                                        : secondaryText,
                                   ),
                                   tooltip: 'Spreadsheet Table View',
                                   onPressed: () =>
@@ -1526,8 +1528,8 @@ class _FinesScreenState extends State<FinesScreen> {
                                   icon: Icon(
                                     Icons.view_agenda_rounded,
                                     color: !_isTableView
-                                        ? const Color(0xff19335A)
-                                        : Colors.grey,
+                                        ? accentColor
+                                        : secondaryText,
                                   ),
                                   tooltip: 'Card List View',
                                   onPressed: () =>
@@ -1546,9 +1548,10 @@ class _FinesScreenState extends State<FinesScreen> {
                               title: 'Due Fines (Default)',
                               amount: '₹${_totalDueAmount.toStringAsFixed(0)}',
                               subtitle: '$_dueCount cases',
-                              color: Colors.red[700]!,
+                              color: isDark ? const Color(0xffF87171) : Colors.red[700]!,
                               icon: Icons.pending_actions_rounded,
-                              bgColor: Colors.red.withOpacity(0.1),
+                              bgColor: Colors.red.withOpacity(isDark ? 0.2 : 0.1),
+                              isDark: isDark,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -1557,9 +1560,10 @@ class _FinesScreenState extends State<FinesScreen> {
                               title: 'Collected Fines',
                               amount: '₹${_totalPaidAmount.toStringAsFixed(0)}',
                               subtitle: '$_paidCount paid',
-                              color: Colors.green[700]!,
+                              color: isDark ? const Color(0xff4ADE80) : Colors.green[700]!,
                               icon: Icons.check_circle_outline,
-                              bgColor: Colors.green.withOpacity(0.1),
+                              bgColor: Colors.green.withOpacity(isDark ? 0.2 : 0.1),
+                              isDark: isDark,
                             ),
                           ),
                         ],
@@ -1573,18 +1577,20 @@ class _FinesScreenState extends State<FinesScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color:
-                                const Color(0xff19335A).withValues(alpha: 0.08),
+                            color: isDark
+                                ? const Color(0xff0284C7).withValues(alpha: 0.15)
+                                : const Color(0xff19335A).withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xff19335A)
-                                  .withValues(alpha: 0.3),
+                              color: isDark
+                                  ? const Color(0xff38BDF8).withValues(alpha: 0.4)
+                                  : const Color(0xff19335A).withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.qr_code_scanner_rounded,
-                                  size: 20, color: Color(0xff19335A)),
+                              Icon(Icons.qr_code_scanner_rounded,
+                                  size: 20, color: accentColor),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
@@ -1594,7 +1600,7 @@ class _FinesScreenState extends State<FinesScreen> {
                                       'Showing fines for member:',
                                       style: GoogleFonts.lato(
                                         fontSize: 11,
-                                        color: Colors.grey[600],
+                                        color: secondaryText,
                                       ),
                                     ),
                                     Text(
@@ -1604,14 +1610,14 @@ class _FinesScreenState extends State<FinesScreen> {
                                       style: GoogleFonts.montserrat(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xff19335A),
+                                        color: primaryText,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.close, size: 20),
+                                icon: Icon(Icons.close, size: 20, color: secondaryText),
                                 onPressed: _clearScannedMember,
                                 tooltip: 'Clear filter',
                               ),
@@ -1624,31 +1630,25 @@ class _FinesScreenState extends State<FinesScreen> {
                         children: [
                           Expanded(
                             child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
+                              decoration: CAppTheme.cardDecoration(context, radius: 12),
                               child: TextField(
                                 controller: _searchController,
                                 onChanged: (_) => _applyFilters(),
+                                style: GoogleFonts.lato(
+                                  fontSize: 13,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
                                 decoration: InputDecoration(
                                   hintText:
                                       'Search Name, Mobile, Component, Class...',
                                   hintStyle: GoogleFonts.lato(
-                                      fontSize: 13, color: Colors.grey),
-                                  prefixIcon: const Icon(Icons.search,
-                                      color: Color(0xff19335A)),
+                                      fontSize: 13, color: isDark ? const Color(0xff64748B) : Colors.grey),
+                                  prefixIcon: Icon(Icons.search,
+                                      color: accentColor),
                                   suffixIcon:
                                       _searchController.text.isNotEmpty
                                           ? IconButton(
-                                              icon: const Icon(Icons.clear),
+                                              icon: Icon(Icons.clear, color: secondaryText),
                                               onPressed: () {
                                                 _searchController.clear();
                                                 _applyFilters();
@@ -1656,6 +1656,8 @@ class _FinesScreenState extends State<FinesScreen> {
                                             )
                                           : null,
                                   border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 14,
@@ -1667,12 +1669,13 @@ class _FinesScreenState extends State<FinesScreen> {
                           const SizedBox(width: 10),
                           Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xff19335A),
+                              color: isDark ? const Color(0xff0284C7) : const Color(0xff19335A),
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xff19335A)
-                                      .withOpacity(0.3),
+                                  color: isDark
+                                      ? const Color(0xff38BDF8).withOpacity(0.3)
+                                      : const Color(0xff19335A).withOpacity(0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -1695,18 +1698,20 @@ class _FinesScreenState extends State<FinesScreen> {
                         child: Row(
                           children: [
                             _buildFilterChip(
-                                'all', 'All Logs (${_allFines.length})'),
+                                'all', 'All Logs (${_allFines.length})', isDark: isDark),
                             const SizedBox(width: 8),
                             _buildFilterChip(
                               'due',
                               'Due / Default ($_dueCount)',
-                              color: Colors.red,
+                              color: isDark ? const Color(0xffEF4444) : Colors.red,
+                              isDark: isDark,
                             ),
                             const SizedBox(width: 8),
                             _buildFilterChip(
                               'paid',
                               'Paid ($_paidCount)',
-                              color: Colors.green,
+                              color: isDark ? const Color(0xff22C55E) : Colors.green,
+                              isDark: isDark,
                             ),
                           ],
                         ),
@@ -1769,17 +1774,14 @@ class _FinesScreenState extends State<FinesScreen> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    child: Container(
+                      decoration: CAppTheme.cardDecoration(context, radius: 12),
                       clipBehavior: Clip.antiAlias,
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
                           headingRowColor: MaterialStateProperty.all(
-                            const Color(0xff19335A),
+                            isDark ? const Color(0xff0F172A) : const Color(0xff19335A),
                           ),
                           headingTextStyle: GoogleFonts.montserrat(
                             color: Colors.white,
@@ -1804,7 +1806,9 @@ class _FinesScreenState extends State<FinesScreen> {
                               color: MaterialStateProperty.resolveWith<Color?>(
                                 (states) {
                                   if (isPaid) {
-                                    return Colors.green.withOpacity(0.04);
+                                    return isDark
+                                        ? const Color(0xff22C55E).withOpacity(0.08)
+                                        : Colors.green.withOpacity(0.04);
                                   }
                                   return null;
                                 },
@@ -1823,7 +1827,7 @@ class _FinesScreenState extends State<FinesScreen> {
                                         style: GoogleFonts.montserrat(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
-                                          color: const Color(0xff19335A),
+                                          color: primaryText,
                                         ),
                                       ),
                                       if (fine.memberName != null)
@@ -1831,7 +1835,7 @@ class _FinesScreenState extends State<FinesScreen> {
                                           fine.memberId,
                                           style: GoogleFonts.lato(
                                             fontSize: 11,
-                                            color: Colors.grey[600],
+                                            color: secondaryText,
                                           ),
                                         ),
                                     ],
@@ -1844,7 +1848,10 @@ class _FinesScreenState extends State<FinesScreen> {
                                             fine.phoneNumber!.isNotEmpty
                                         ? fine.phoneNumber!
                                         : '—',
-                                    style: GoogleFonts.lato(fontSize: 13),
+                                    style: GoogleFonts.lato(
+                                      fontSize: 13,
+                                      color: isDark ? const Color(0xffCBD5E1) : Colors.black87,
+                                    ),
                                   ),
                                 ),
                                 // Component
@@ -1857,6 +1864,7 @@ class _FinesScreenState extends State<FinesScreen> {
                                       style: GoogleFonts.lato(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 13,
+                                        color: isDark ? const Color(0xffF1F5F9) : Colors.black87,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 2,
@@ -1871,6 +1879,7 @@ class _FinesScreenState extends State<FinesScreen> {
                                       style: GoogleFonts.lato(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13,
+                                        color: isDark ? const Color(0xffF1F5F9) : Colors.black87,
                                       ),
                                     ),
                                   ),
@@ -1882,6 +1891,7 @@ class _FinesScreenState extends State<FinesScreen> {
                                     style: GoogleFonts.lato(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
+                                      color: isDark ? const Color(0xffCBD5E1) : Colors.black87,
                                     ),
                                   ),
                                 ),
@@ -1892,7 +1902,10 @@ class _FinesScreenState extends State<FinesScreen> {
                                         (fine.createdAt != null
                                             ? _formatDate(fine.createdAt!)
                                             : '—'),
-                                    style: GoogleFonts.lato(fontSize: 12),
+                                    style: GoogleFonts.lato(
+                                      fontSize: 12,
+                                      color: secondaryText,
+                                    ),
                                   ),
                                 ),
                                 // Return Date
@@ -1902,8 +1915,8 @@ class _FinesScreenState extends State<FinesScreen> {
                                     style: GoogleFonts.lato(
                                       fontSize: 12,
                                       color: fine.returnDate != null
-                                          ? Colors.black87
-                                          : Colors.red[700],
+                                          ? (isDark ? const Color(0xffCBD5E1) : Colors.black87)
+                                          : (isDark ? const Color(0xffF87171) : Colors.red[700]),
                                       fontWeight: fine.returnDate != null
                                           ? FontWeight.normal
                                           : FontWeight.w600,
@@ -1920,8 +1933,8 @@ class _FinesScreenState extends State<FinesScreen> {
                                         style: GoogleFonts.montserrat(
                                           fontWeight: FontWeight.bold,
                                           color: isPaid
-                                              ? Colors.green[800]
-                                              : Colors.red[800],
+                                              ? (isDark ? const Color(0xff4ADE80) : Colors.green[800])
+                                              : (isDark ? const Color(0xffF87171) : Colors.red[800]),
                                           fontSize: 13,
                                         ),
                                       ),
@@ -1937,10 +1950,10 @@ class _FinesScreenState extends State<FinesScreen> {
                                     children: [
                                       if (isPaid) ...[
                                         IconButton(
-                                          icon: const Icon(
+                                          icon: Icon(
                                             Icons.receipt_long_rounded,
                                             size: 20,
-                                            color: Color(0xff19335A),
+                                            color: accentColor,
                                           ),
                                           tooltip: 'Generate / Print Receipt',
                                           constraints: const BoxConstraints(),
@@ -1959,8 +1972,8 @@ class _FinesScreenState extends State<FinesScreen> {
                                               horizontal: 10, vertical: 6),
                                           decoration: BoxDecoration(
                                             color: isPaid
-                                                ? Colors.grey[200]
-                                                : Colors.green[700],
+                                                ? (isDark ? const Color(0xff334155) : Colors.grey[200])
+                                                : (isDark ? const Color(0xff15803D) : Colors.green[700]),
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
@@ -1973,7 +1986,7 @@ class _FinesScreenState extends State<FinesScreen> {
                                                     : Icons.check_circle_rounded,
                                                 size: 14,
                                                 color: isPaid
-                                                    ? Colors.black87
+                                                    ? (isDark ? const Color(0xffCBD5E1) : Colors.black87)
                                                     : Colors.white,
                                               ),
                                               const SizedBox(width: 4),
@@ -1983,7 +1996,7 @@ class _FinesScreenState extends State<FinesScreen> {
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold,
                                                   color: isPaid
-                                                      ? Colors.black87
+                                                      ? (isDark ? const Color(0xffCBD5E1) : Colors.black87)
                                                       : Colors.white,
                                                 ),
                                               ),
@@ -2046,15 +2059,20 @@ class _FinesScreenState extends State<FinesScreen> {
     required Color color,
     required IconData icon,
     required Color bgColor,
+    bool isDark = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xff1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2071,7 +2089,7 @@ class _FinesScreenState extends State<FinesScreen> {
                 style: GoogleFonts.lato(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
+                  color: isDark ? const Color(0xff94A3B8) : Colors.grey[700],
                 ),
               ),
               Container(
@@ -2097,7 +2115,7 @@ class _FinesScreenState extends State<FinesScreen> {
             subtitle,
             style: GoogleFonts.lato(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: isDark ? const Color(0xff64748B) : Colors.grey[600],
             ),
           ),
         ],
@@ -2105,8 +2123,10 @@ class _FinesScreenState extends State<FinesScreen> {
     );
   }
 
-  Widget _buildFilterChip(String filterKey, String label, {Color? color}) {
+  Widget _buildFilterChip(String filterKey, String label, {Color? color, bool isDark = false}) {
     final isSelected = _selectedFilter == filterKey;
+    final activeColor = color ?? (isDark ? const Color(0xff0284C7) : const Color(0xff19335A));
+
     return ChoiceChip(
       label: Text(
         label,
@@ -2115,12 +2135,15 @@ class _FinesScreenState extends State<FinesScreen> {
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           color: isSelected
               ? Colors.white
-              : (color ?? const Color(0xff19335A)),
+              : (isDark ? const Color(0xff94A3B8) : (color ?? const Color(0xff19335A))),
         ),
       ),
       selected: isSelected,
-      selectedColor: color ?? const Color(0xff19335A),
-      backgroundColor: Colors.white,
+      selectedColor: activeColor,
+      backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
+      side: BorderSide(
+        color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+      ),
       onSelected: (_) {
         setState(() {
           _selectedFilter = filterKey;
@@ -2132,168 +2155,178 @@ class _FinesScreenState extends State<FinesScreen> {
 
   Widget _buildFineCard(FineModel fine) {
     final isPaid = fine.isPaid;
-    return Card(
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => _showFineDetails(fine),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      decoration: CAppTheme.cardDecoration(context, radius: 16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _showFineDetails(fine),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            fine.memberName ?? fine.memberId,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: primaryText,
+                            ),
+                          ),
+                          if (fine.phoneNumber != null &&
+                              fine.phoneNumber!.isNotEmpty)
+                            Text(
+                              '📱 ${fine.phoneNumber}',
+                              style: GoogleFonts.lato(
+                                fontSize: 12,
+                                color: secondaryText,
+                              ),
+                            ),
+                          if (fine.className != null && fine.className!.isNotEmpty)
+                            Text(
+                              'Class: ${fine.className}',
+                              style: GoogleFonts.lato(
+                                fontSize: 11,
+                                color: secondaryText,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          fine.memberName ?? fine.memberId,
+                          '₹${fine.amount.toStringAsFixed(0)}',
                           style: GoogleFonts.montserrat(
-                            fontSize: 16,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xff19335A),
+                            color: isPaid ? (isDark ? const Color(0xff4ADE80) : Colors.green[800]) : (isDark ? const Color(0xffF87171) : Colors.red[800]),
                           ),
                         ),
-                        if (fine.phoneNumber != null &&
-                            fine.phoneNumber!.isNotEmpty)
-                          Text(
-                            '📱 ${fine.phoneNumber}',
-                            style: GoogleFonts.lato(
-                              fontSize: 12,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        if (fine.className != null && fine.className!.isNotEmpty)
-                          Text(
-                            'Class: ${fine.className}',
-                            style: GoogleFonts.lato(
-                              fontSize: 11,
-                              color: Colors.grey[600],
-                            ),
-                          ),
+                        const SizedBox(height: 4),
+                        _buildStatusBadge(fine.status),
                       ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '₹${fine.amount.toStringAsFixed(0)}',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isPaid ? Colors.green[800] : Colors.red[800],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      _buildStatusBadge(fine.status),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.memory_rounded,
-                        size: 16, color: Color(0xff19335A)),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        '${fine.componentName ?? fine.reason} (Qty: ${fine.quantity ?? 1})',
-                        style: GoogleFonts.lato(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Issue: ${fine.issueDate ?? "—"}  •  Return: ${fine.returnDate ?? (isPaid ? "Returned" : "Pending")}',
-                      style: GoogleFonts.lato(
-                        fontSize: 11,
-                        color: Colors.grey[600],
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xff0F172A) : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark ? const Color(0xff334155) : Colors.transparent,
+                      width: 1,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Row(
                     children: [
-                      if (isPaid) ...[
-                        IconButton(
-                          icon: const Icon(
-                            Icons.receipt_long_rounded,
-                            size: 20,
-                            color: Color(0xff19335A),
-                          ),
-                          tooltip: 'Generate / Print Receipt',
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          onPressed: () =>
-                              FineReceiptDialog.show(context, fine),
-                        ),
-                        const SizedBox(width: 2),
-                      ],
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: const Size(50, 20),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        icon: Icon(
-                            isPaid
-                                ? Icons.undo_rounded
-                                : Icons.check_circle_rounded,
-                            size: 14,
-                            color: isPaid ? Colors.grey[700] : Colors.green[800]),
-                        label: Text(
-                          isPaid ? 'Revert to Due' : 'Mark Paid',
+                      Icon(Icons.memory_rounded,
+                          size: 16, color: isDark ? const Color(0xff38BDF8) : const Color(0xff19335A)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '${fine.componentName ?? fine.reason} (Qty: ${fine.quantity ?? 1})',
                           style: GoogleFonts.lato(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isPaid ? Colors.grey[800] : Colors.green[800],
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xffF1F5F9) : Colors.black87,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        onPressed: () => _toggleFineStatus(fine),
-                      ),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline_rounded,
-                            size: 18, color: Colors.red),
-                        tooltip: 'Delete Fine',
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        onPressed: () => _confirmDeleteFine(fine),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Issue: ${fine.issueDate ?? "—"}  •  Return: ${fine.returnDate ?? (isPaid ? "Returned" : "Pending")}',
+                        style: GoogleFonts.lato(
+                          fontSize: 11,
+                          color: secondaryText,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isPaid) ...[
+                          IconButton(
+                            icon: Icon(
+                              Icons.receipt_long_rounded,
+                              size: 20,
+                              color: isDark ? const Color(0xff38BDF8) : const Color(0xff19335A),
+                            ),
+                            tooltip: 'Generate / Print Receipt',
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            onPressed: () =>
+                                FineReceiptDialog.show(context, fine),
+                          ),
+                          const SizedBox(width: 2),
+                        ],
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(50, 20),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          icon: Icon(
+                              isPaid
+                                  ? Icons.undo_rounded
+                                  : Icons.check_circle_rounded,
+                              size: 14,
+                              color: isPaid ? (isDark ? const Color(0xff94A3B8) : Colors.grey[700]) : (isDark ? const Color(0xff4ADE80) : Colors.green[800])),
+                          label: Text(
+                            isPaid ? 'Revert to Due' : 'Mark Paid',
+                            style: GoogleFonts.lato(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isPaid ? (isDark ? const Color(0xffCBD5E1) : Colors.grey[800]) : (isDark ? const Color(0xff4ADE80) : Colors.green[800]),
+                            ),
+                          ),
+                          onPressed: () => _toggleFineStatus(fine),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded,
+                              size: 18, color: Colors.red),
+                          tooltip: 'Delete Fine',
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          onPressed: () => _confirmDeleteFine(fine),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -8,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -37,11 +39,23 @@ void main() async {
   final cacheController = Get.put(CacheController(), permanent: true);
   cacheController.prewarmCategories();
 
-  runApp(const MyApp());
+  // Load saved theme preference
+  ThemeMode initialThemeMode = ThemeMode.light;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = prefs.getBool('is_dark_mode');
+    if (isDark != null) {
+      initialThemeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    }
+  } catch (_) {}
+
+  runApp(MyApp(initialThemeMode: initialThemeMode));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ThemeMode initialThemeMode;
+
+  const MyApp({super.key, this.initialThemeMode = ThemeMode.light});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +63,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: CAppTheme.lightTheme,
       darkTheme: CAppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: initialThemeMode,
       home: const LoginScreen(),
     );
   }

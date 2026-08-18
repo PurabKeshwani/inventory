@@ -10,6 +10,7 @@ import 'package:inventory/src/data/othermodulesandcomponents.dart';
 import 'package:inventory/src/data/powercomponents.dart';
 import 'package:inventory/src/data/sensors.dart';
 import 'package:inventory/src/features/main_app/components_in_class_screen/component_in_class_screen.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 
 class ComponentItemWithCategory {
   final Component component;
@@ -207,18 +208,16 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 154, 210, 255),
-              Color.fromARGB(255, 213, 245, 252),
-              Color.fromARGB(255, 242, 254, 255)
-            ],
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-          ),
+        decoration: BoxDecoration(
+          gradient: CAppTheme.bgGradient(context),
         ),
         child: RefreshIndicator(
           onRefresh: () => _loadAllComponents(forceRefresh: true),
@@ -239,21 +238,27 @@ class _SearchScreenState extends State<SearchScreen> {
                             style: GoogleFonts.montserrat(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xff19335A),
+                              color: primaryText,
                             ),
                           ),
                           Obx(() => Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xff19335A),
+                                  color: isDark
+                                      ? const Color(0xff38BDF8).withValues(alpha: 0.2)
+                                      : const Color(0xff19335A),
                                   borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xff38BDF8).withValues(alpha: 0.4) : Colors.transparent,
+                                    width: 1,
+                                  ),
                                 ),
                                 child: Text(
                                   '$_totalUniqueComponents Types ($_totalUnits in stock)',
                                   style: GoogleFonts.lato(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: isDark ? const Color(0xff38BDF8) : Colors.white,
                                   ),
                                 ),
                               )),
@@ -262,27 +267,24 @@ class _SearchScreenState extends State<SearchScreen> {
                       const SizedBox(height: 12),
                       // Search bar
                       Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                        decoration: CAppTheme.cardDecoration(context, radius: 12),
                         child: TextField(
                           controller: _textEditingController,
                           onChanged: (value) => controller.filterByQuery(value),
+                          style: GoogleFonts.lato(
+                            fontSize: 14,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
                           decoration: InputDecoration(
                             hintText: 'Search components, box no, SKU...',
-                            hintStyle: GoogleFonts.lato(fontSize: 14, color: Colors.grey),
-                            prefixIcon: const Icon(Icons.search, color: Color(0xff19335A)),
+                            hintStyle: GoogleFonts.lato(
+                              fontSize: 14,
+                              color: isDark ? const Color(0xff64748B) : Colors.grey[500],
+                            ),
+                            prefixIcon: Icon(Icons.search, color: accentColor),
                             suffixIcon: _textEditingController.text.isNotEmpty
                                 ? IconButton(
-                                    icon: const Icon(Icons.clear),
+                                    icon: Icon(Icons.clear, color: secondaryText),
                                     onPressed: () {
                                       _textEditingController.clear();
                                       controller.filterByQuery('');
@@ -291,6 +293,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   )
                                 : null,
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),
                         ),
@@ -311,12 +315,17 @@ class _SearchScreenState extends State<SearchScreen> {
                                     style: GoogleFonts.lato(
                                       fontSize: 12,
                                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                      color: isSelected ? Colors.white : const Color(0xff19335A),
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDark ? const Color(0xff94A3B8) : const Color(0xff19335A)),
                                     ),
                                   ),
                                   selected: isSelected,
-                                  selectedColor: const Color(0xff19335A),
-                                  backgroundColor: Colors.white,
+                                  selectedColor: isDark ? const Color(0xff0284C7) : const Color(0xff19335A),
+                                  backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
+                                  side: BorderSide(
+                                    color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+                                  ),
                                   onSelected: (_) => controller.filterByCategory(cat),
                                 ),
                               );
@@ -331,9 +340,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
               // Components List
               if (isLoading)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: Center(
-                    child: CircularProgressIndicator(color: Color(0xff19335A)),
+                    child: CircularProgressIndicator(color: accentColor),
                   ),
                 )
               else
@@ -349,21 +358,28 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
+                              Icon(
+                                Icons.inventory_2_outlined,
+                                size: 64,
+                                color: isDark ? const Color(0xff475569) : Colors.grey[400],
+                              ),
                               const SizedBox(height: 16),
                               Text(
                                 'No Components Found',
                                 style: GoogleFonts.montserrat(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.grey[700],
+                                  color: isDark ? const Color(0xffCBD5E1) : Colors.grey[700],
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'Try changing the category or search query.',
                                 textAlign: TextAlign.center,
-                                style: GoogleFonts.lato(fontSize: 14, color: Colors.grey[600]),
+                                style: GoogleFonts.lato(
+                                  fontSize: 14,
+                                  color: secondaryText,
+                                ),
                               ),
                             ],
                           ),
@@ -378,10 +394,9 @@ class _SearchScreenState extends State<SearchScreen> {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final component = components[index];
-                          return Card(
+                          return Container(
                             margin: const EdgeInsets.only(bottom: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            elevation: 2,
+                            decoration: CAppTheme.cardDecoration(context, radius: 14),
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                               onTap: () {
@@ -393,10 +408,10 @@ class _SearchScreenState extends State<SearchScreen> {
                               },
                               title: Text(
                                 component.name,
-                                style: GoogleFonts.lato(
+                                style: GoogleFonts.montserrat(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: const Color(0xff19335A),
+                                  fontSize: 15,
+                                  color: primaryText,
                                 ),
                               ),
                               subtitle: Column(
@@ -409,11 +424,18 @@ class _SearchScreenState extends State<SearchScreen> {
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
                                           color: component.stock == 0
-                                              ? Colors.red.withOpacity(0.12)
+                                              ? (isDark ? Colors.red.withOpacity(0.2) : Colors.red.withOpacity(0.12))
                                               : component.stock <= 2
-                                                  ? Colors.orange.withOpacity(0.12)
-                                                  : Colors.green.withOpacity(0.12),
+                                                  ? (isDark ? Colors.orange.withOpacity(0.2) : Colors.orange.withOpacity(0.12))
+                                                  : (isDark ? Colors.green.withOpacity(0.2) : Colors.green.withOpacity(0.12)),
                                           borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: component.stock == 0
+                                                ? (isDark ? Colors.red.withOpacity(0.4) : Colors.transparent)
+                                                : component.stock <= 2
+                                                    ? (isDark ? Colors.orange.withOpacity(0.4) : Colors.transparent)
+                                                    : (isDark ? Colors.green.withOpacity(0.4) : Colors.transparent),
+                                          ),
                                         ),
                                         child: Text(
                                           component.stock == 0
@@ -423,10 +445,10 @@ class _SearchScreenState extends State<SearchScreen> {
                                             fontWeight: FontWeight.bold,
                                             fontSize: 12,
                                             color: component.stock == 0
-                                                ? Colors.red[800]
+                                                ? (isDark ? Colors.red[300] : Colors.red[800])
                                                 : component.stock <= 2
-                                                    ? Colors.orange[900]
-                                                    : Colors.green[800],
+                                                    ? (isDark ? Colors.orange[300] : Colors.orange[900])
+                                                    : (isDark ? Colors.green[300] : Colors.green[800]),
                                           ),
                                         ),
                                       ),
@@ -437,7 +459,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                             'Box: ${component.boxNo}',
                                             style: GoogleFonts.lato(
                                               fontSize: 12,
-                                              color: Colors.grey[700],
+                                              color: secondaryText,
                                               fontWeight: FontWeight.w500,
                                             ),
                                             overflow: TextOverflow.ellipsis,
@@ -448,7 +470,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                   ),
                                 ],
                               ),
-                              trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                              trailing: Icon(
+                                Icons.chevron_right_rounded,
+                                size: 20,
+                                color: secondaryText.withValues(alpha: 0.6),
+                              ),
                             ),
                           );
                         },

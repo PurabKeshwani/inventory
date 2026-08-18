@@ -10,6 +10,7 @@ import 'package:inventory/src/features/authentication/controllers/componentContr
 import 'package:inventory/src/features/authentication/controllers/emailcontroller.dart';
 import 'package:inventory/src/features/authentication/controllers/thankyoucontroller.dart';
 import 'package:inventory/src/features/main_app/thankyou.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -471,11 +472,15 @@ class _CartscreenState extends State<Cartscreen> {
     final isReturnMode = componentcontroller.returnorissue.value;
     final totalQty = componentcontroller.Cartcomponents.fold<int>(
         0, (sum, item) => sum + item.Quantity);
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
 
     return Scaffold(
-      backgroundColor: const Color(0xffF4F7FB),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xff19335A),
+        backgroundColor: isDark ? const Color(0xff0F172A) : const Color(0xff19335A),
         foregroundColor: Colors.white,
         elevation: 0,
         title: Row(
@@ -506,34 +511,38 @@ class _CartscreenState extends State<Cartscreen> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Status Banner (Issue vs Return)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isReturnMode
-                      ? [const Color(0xff0D7A53), const Color(0xff1DB978)]
-                      : [const Color(0xff19335A), const Color(0xff2F548A)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isReturnMode
-                            ? Colors.green
-                            : const Color(0xff19335A))
-                        .withValues(alpha: 0.25),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: CAppTheme.bgGradient(context),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Status Banner (Issue vs Return)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isReturnMode
+                        ? (isDark ? const [Color(0xff065F46), Color(0xff059669)] : const [Color(0xff0D7A53), const Color(0xff1DB978)])
+                        : (isDark ? const [Color(0xff0F172A), Color(0xff1E293B)] : const [Color(0xff19335A), const Color(0xff2F548A)]),
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                   ),
-                ],
-              ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? const Color(0xff334155) : Colors.transparent,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
               child: Row(
                 children: [
                   Container(
@@ -1134,17 +1143,23 @@ class _CartscreenState extends State<Cartscreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // Component Card Tile
   Widget _buildComponentItemCard(Cartcomponent item, int index) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xffF9FBFE),
+        color: isDark ? const Color(0xff0F172A) : const Color(0xffF9FBFE),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xffE2EAF4)),
+        border: Border.all(color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4)),
       ),
       child: Row(
         children: [
@@ -1152,12 +1167,12 @@ class _CartscreenState extends State<Cartscreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xff19335A).withValues(alpha: 0.08),
+              color: accentColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.memory_rounded,
-              color: Color(0xff19335A),
+              color: accentColor,
               size: 22,
             ),
           ),
@@ -1172,7 +1187,7 @@ class _CartscreenState extends State<Cartscreen> {
                   style: GoogleFonts.montserrat(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xff19335A),
+                    color: primaryText,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1181,15 +1196,16 @@ class _CartscreenState extends State<Cartscreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color: isDark ? const Color(0xff1E293B) : Colors.grey[200],
                     borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: isDark ? const Color(0xff334155) : Colors.transparent),
                   ),
                   child: Text(
                     item.skuid,
                     style: GoogleFonts.lato(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: isDark ? const Color(0xffCBD5E1) : Colors.grey[800],
                     ),
                   ),
                 ),
@@ -1202,7 +1218,7 @@ class _CartscreenState extends State<Cartscreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xff19335A).withValues(alpha: 0.1),
+              color: accentColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -1210,7 +1226,7 @@ class _CartscreenState extends State<Cartscreen> {
               style: GoogleFonts.montserrat(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xff19335A),
+                color: accentColor,
               ),
             ),
           ),
@@ -1241,6 +1257,10 @@ class _CartscreenState extends State<Cartscreen> {
     TextInputType? keyboardType,
     ValueChanged<String>? onChanged,
   }) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1249,25 +1269,25 @@ class _CartscreenState extends State<Cartscreen> {
           style: GoogleFonts.montserrat(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: const Color(0xff19335A),
+            color: primaryText,
           ),
         ),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xffF9FAFC),
+            color: isDark ? const Color(0xff0F172A) : const Color(0xffF9FAFC),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: isDark ? const Color(0xff334155) : Colors.grey[300]!),
           ),
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
             onChanged: onChanged,
-            style: GoogleFonts.lato(fontSize: 13, color: Colors.black87),
+            style: GoogleFonts.lato(fontSize: 13, color: isDark ? Colors.white : Colors.black87),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.lato(fontSize: 13, color: Colors.grey[400]),
-              prefixIcon: Icon(icon, color: const Color(0xff19335A), size: 18),
+              hintStyle: GoogleFonts.lato(fontSize: 13, color: isDark ? const Color(0xff64748B) : Colors.grey[400]),
+              prefixIcon: Icon(icon, color: accentColor, size: 18),
               suffixIcon: suffix,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
@@ -1286,15 +1306,19 @@ class _CartscreenState extends State<Cartscreen> {
     Widget? headerAction,
     Widget? headerBadge,
   }) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xff1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: isDark ? const Color(0xff334155) : Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.025),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.025),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1308,14 +1332,14 @@ class _CartscreenState extends State<Cartscreen> {
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 18, color: const Color(0xff19335A)),
+                  Icon(icon, size: 18, color: accentColor),
                   const SizedBox(width: 8),
                   Text(
                     title,
                     style: GoogleFonts.montserrat(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xff19335A),
+                      color: primaryText,
                     ),
                   ),
                 ],
@@ -1325,7 +1349,7 @@ class _CartscreenState extends State<Cartscreen> {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1),
+          Divider(height: 1, color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4)),
           const SizedBox(height: 14),
           child,
         ],
@@ -1340,6 +1364,11 @@ class _CartscreenState extends State<Cartscreen> {
     Color? valueColor,
     bool isBold = false,
   }) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1347,7 +1376,7 @@ class _CartscreenState extends State<Cartscreen> {
           label,
           style: GoogleFonts.lato(
             fontSize: 13,
-            color: Colors.grey[700],
+            color: secondaryText,
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -1356,7 +1385,7 @@ class _CartscreenState extends State<Cartscreen> {
           style: GoogleFonts.montserrat(
             fontSize: 13,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: valueColor ?? const Color(0xff19335A),
+            color: valueColor ?? primaryText,
           ),
         ),
       ],

@@ -5,6 +5,7 @@ import 'package:inventory/src/controllers/cache_controller.dart';
 import 'package:inventory/src/data/model.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/main_app/dashboard/classScreen.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ClassContainer extends StatefulWidget {
@@ -96,22 +97,41 @@ class _ClassContainerState extends State<ClassContainer> {
     }
   }
 
-  Color _getCategoryColor(String label) {
-    switch (label) {
-      case 'Microcontroller':
-        return const Color(0xff19335A);
-      case 'Communication Modules':
-        return const Color(0xff007791);
-      case 'Sensors':
-        return const Color(0xff00897B);
-      case 'Displays and Indicators':
-        return const Color(0xff5E35B1);
-      case 'Actuators and Motors':
-        return const Color(0xffD84315);
-      case 'Power Components':
-        return const Color(0xffE65100);
-      default:
-        return const Color(0xff455A64);
+  Color _getCategoryColor(String label, bool isDark) {
+    if (isDark) {
+      switch (label) {
+        case 'Microcontroller':
+          return const Color(0xff38BDF8); // Sky blue
+        case 'Communication Modules':
+          return const Color(0xff2DD4BF); // Teal
+        case 'Sensors':
+          return const Color(0xff34D399); // Emerald
+        case 'Displays and Indicators':
+          return const Color(0xffA78BFA); // Purple
+        case 'Actuators and Motors':
+          return const Color(0xffFB923C); // Orange
+        case 'Power Components':
+          return const Color(0xffFBBF24); // Amber
+        default:
+          return const Color(0xff94A3B8); // Slate
+      }
+    } else {
+      switch (label) {
+        case 'Microcontroller':
+          return const Color(0xff19335A);
+        case 'Communication Modules':
+          return const Color(0xff007791);
+        case 'Sensors':
+          return const Color(0xff00897B);
+        case 'Displays and Indicators':
+          return const Color(0xff5E35B1);
+        case 'Actuators and Motors':
+          return const Color(0xffD84315);
+        case 'Power Components':
+          return const Color(0xffE65100);
+        default:
+          return const Color(0xff455A64);
+      }
     }
   }
 
@@ -136,20 +156,30 @@ class _ClassContainerState extends State<ClassContainer> {
 
   @override
   Widget build(BuildContext context) {
-    final catColor = _getCategoryColor(widget.label);
+    final isDark = CAppTheme.isDark(context);
+    final catColor = _getCategoryColor(widget.label, isDark);
     final catIcon = _getCategoryIcon(widget.label);
     final catSubtitle = _getCategorySubtitle(widget.label);
+
+    final cardBg = isDark ? const Color(0xff1E293B) : Colors.white;
+    final cardBorder = isDark ? const Color(0xff334155) : const Color(0xffE2EAF4);
+    final titleColor = isDark ? const Color(0xffF8FAFC) : const Color(0xff19335A);
+    final subtitleColor = isDark ? const Color(0xff94A3B8) : Colors.grey[600]!;
+    final badgeBg = isDark
+        ? catColor.withValues(alpha: 0.15)
+        : const Color(0xff19335A).withValues(alpha: 0.08);
+    final badgeText = isDark ? catColor : const Color(0xff19335A);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xffE2EAF4)),
+        border: Border.all(color: cardBorder, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
+            color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.03),
+            blurRadius: isDark ? 8 : 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -172,8 +202,12 @@ class _ClassContainerState extends State<ClassContainer> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: catColor.withValues(alpha: 0.1),
+                    color: catColor.withValues(alpha: isDark ? 0.2 : 0.1),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: catColor.withValues(alpha: isDark ? 0.4 : 0.2),
+                      width: 1,
+                    ),
                   ),
                   child: Icon(catIcon, color: catColor, size: 24),
                 ),
@@ -189,7 +223,7 @@ class _ClassContainerState extends State<ClassContainer> {
                         style: GoogleFonts.montserrat(
                           fontSize: 14.5,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xff19335A),
+                          color: titleColor,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -197,7 +231,7 @@ class _ClassContainerState extends State<ClassContainer> {
                         catSubtitle,
                         style: GoogleFonts.lato(
                           fontSize: 11.5,
-                          color: Colors.grey[600],
+                          color: subtitleColor,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -213,32 +247,39 @@ class _ClassContainerState extends State<ClassContainer> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xff19335A).withValues(alpha: 0.08),
+                        color: badgeBg,
                         borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isDark ? catColor.withValues(alpha: 0.3) : Colors.transparent,
+                          width: 1,
+                        ),
                       ),
                       child: isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: badgeText,
+                              ),
                             )
                           : Text(
                               '$totalStock Units',
                               style: GoogleFonts.montserrat(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xff19335A),
+                                color: badgeText,
                               ),
                             ),
                     ),
                   ],
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 6),
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: Colors.grey[400],
+                  color: isDark ? const Color(0xff64748B) : Colors.grey[400],
                   size: 20,
                 ),
               ],
