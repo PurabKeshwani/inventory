@@ -62,7 +62,14 @@ class TransactionModel extends Equatable {
     );
   }
 
-  bool get isReturned => status.trim().toLowerCase() == 'returned';
+  bool get isReturned {
+    final normalized = status.trim().toLowerCase();
+    if (normalized.isEmpty) return false;
+    return normalized == 'returned' ||
+        normalized == 'return' ||
+        normalized == 'returned to inventory' ||
+        normalized == 'closed';
+  }
 
   bool get isDue => !isReturned;
 

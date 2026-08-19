@@ -9,6 +9,7 @@ import 'package:inventory/src/controllers/cache_controller.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/main_app/fines/models/fine_model.dart';
 import 'package:inventory/src/features/main_app/fines/services/fine_service.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 
 class MemberTransactionsModal extends StatefulWidget {
   const MemberTransactionsModal({super.key});
@@ -452,7 +453,6 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
     final className = member?['class'] ?? tx['class']?.toString() ?? '';
     final txId = tx['transaction_id']?.toString() ?? '';
 
-    // Summarize components
     var packageRaw = tx['package'];
     List<dynamic> pkgList = [];
     if (packageRaw is String) {
@@ -468,11 +468,8 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
     if (pkgList.isNotEmpty) {
       final names = <String>[];
       for (var p in pkgList) {
-        final cName =
-            p['compname']?.toString() ?? p['name']?.toString() ?? 'Component';
-        final qty = int.tryParse(
-                p['Quantity']?.toString() ?? p['quantity']?.toString() ?? '1') ??
-            1;
+        final cName = p['compname']?.toString() ?? p['name']?.toString() ?? 'Component';
+        final qty = int.tryParse(p['Quantity']?.toString() ?? p['quantity']?.toString() ?? '1') ?? 1;
         totalQty += qty;
         names.add('$cName (Qty: $qty)');
       }
@@ -482,12 +479,17 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
     final amountController = TextEditingController(text: '50');
     final reasonController = TextEditingController(text: 'Late Return');
     final notesController = TextEditingController();
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
 
     showDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
+            backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Row(
               children: [
@@ -498,7 +500,7 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                   style: GoogleFonts.montserrat(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: const Color(0xff19335A),
+                    color: primaryText,
                   ),
                 ),
               ],
@@ -511,10 +513,10 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xff19335A).withValues(alpha: 0.05),
+                      color: accentColor.withValues(alpha: isDark ? 0.18 : 0.05),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: const Color(0xff19335A).withValues(alpha: 0.15),
+                        color: accentColor.withValues(alpha: isDark ? 0.35 : 0.15),
                       ),
                     ),
                     child: Column(
@@ -525,19 +527,19 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                           style: GoogleFonts.montserrat(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: const Color(0xff19335A),
+                            color: primaryText,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Transaction: #$txId',
-                          style: GoogleFonts.lato(fontSize: 12, color: Colors.grey[700]),
+                          style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
                         ),
                         if (compSummary.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(
                             'Items: $compSummary',
-                            style: GoogleFonts.lato(fontSize: 12, color: Colors.grey[800]),
+                            style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
                           ),
                         ],
                       ],
@@ -549,7 +551,7 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                     style: GoogleFonts.montserrat(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      color: const Color(0xff19335A),
+                      color: primaryText,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -563,7 +565,6 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // Quick Amount Chips
                   Wrap(
                     spacing: 8,
                     children: [30, 50, 100, 200].map((val) {
@@ -586,7 +587,7 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                     style: GoogleFonts.montserrat(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      color: const Color(0xff19335A),
+                      color: primaryText,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -607,7 +608,11 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                       'Missing Item',
                     ].map((r) {
                       return ActionChip(
-                        label: Text(r, style: const TextStyle(fontSize: 11)),
+                        label: Text(r, style: TextStyle(fontSize: 11, color: primaryText)),
+                        backgroundColor: isDark ? const Color(0xff0F172A) : null,
+                        side: BorderSide(
+                          color: isDark ? const Color(0xff334155) : Colors.transparent,
+                        ),
                         onPressed: () {
                           setDialogState(() {
                             reasonController.text = r;
@@ -622,7 +627,7 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                     style: GoogleFonts.montserrat(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
-                      color: const Color(0xff19335A),
+                      color: primaryText,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -641,12 +646,12 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogCtx),
-                child: Text('Cancel', style: GoogleFonts.lato(color: Colors.grey[700])),
+                child: Text('Cancel', style: GoogleFonts.lato(color: secondaryText)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff19335A),
-                  foregroundColor: Colors.white,
+                  backgroundColor: accentColor,
+                  foregroundColor: isDark ? const Color(0xff080E1A) : Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 onPressed: () async {
@@ -710,30 +715,36 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.88,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xff0F172A) : Colors.white,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
+        ),
+        border: Border.all(
+          color: isDark ? const Color(0xff334155) : Colors.transparent,
         ),
       ),
       child: Column(
         children: [
-          // Drag Handle
           const SizedBox(height: 12),
           Container(
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: isDark ? const Color(0xff334155) : Colors.grey[300],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 12),
 
-          // Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Row(
@@ -744,12 +755,12 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xff19335A).withValues(alpha: 0.1),
+                        color: accentColor.withValues(alpha: isDark ? 0.2 : 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.person_search_rounded,
-                        color: Color(0xff19335A),
+                        color: accentColor,
                         size: 22,
                       ),
                     ),
@@ -759,19 +770,19 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                       style: GoogleFonts.montserrat(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xff19335A),
+                        color: primaryText,
                       ),
                     ),
                   ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded),
+                  icon: Icon(Icons.close_rounded, color: secondaryText),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
           ),
-          const Divider(height: 20),
+          Divider(height: 20, color: isDark ? const Color(0xff334155) : null),
 
           // Search & Scan Bar
           Padding(
@@ -781,20 +792,27 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: isDark ? const Color(0xff1E293B) : Colors.grey[100],
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(color: isDark ? const Color(0xff334155) : Colors.grey[300]!),
                     ),
                     child: TextField(
                       controller: _searchController,
                       onSubmitted: (_) => _handleSearch(),
+                      style: GoogleFonts.lato(
+                        fontSize: 13,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                       decoration: InputDecoration(
                         hintText: 'Enter Email, ISA Login ID or Name...',
-                        hintStyle: GoogleFonts.lato(fontSize: 13, color: Colors.grey[500]),
-                        prefixIcon: const Icon(Icons.search, color: Color(0xff19335A), size: 20),
+                        hintStyle: GoogleFonts.lato(
+                          fontSize: 13,
+                          color: isDark ? const Color(0xff64748B) : Colors.grey[500],
+                        ),
+                        prefixIcon: Icon(Icons.search, color: accentColor, size: 20),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18),
+                                icon: Icon(Icons.clear, size: 18, color: secondaryText),
                                 onPressed: () {
                                   _searchController.clear();
                                   setState(() {
@@ -814,7 +832,7 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                 // Search Submit Button
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff19335A),
+                    backgroundColor: accentColor,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -832,11 +850,11 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                 // QR Scanner Button
                 IconButton(
                   style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xff19335A).withValues(alpha: 0.1),
+                    backgroundColor: accentColor.withValues(alpha: isDark ? 0.2 : 0.1),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.all(12),
                   ),
-                  icon: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xff19335A)),
+                  icon: Icon(Icons.qr_code_scanner_rounded, color: accentColor),
                   tooltip: 'Scan Member QR',
                   onPressed: _startQRScan,
                 ),
@@ -934,6 +952,11 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
   }
 
   Widget _buildTransactionsContent() {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     if (_selectedMember == null) {
       return Center(
         child: Column(
@@ -942,7 +965,7 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
             Icon(
               Icons.qr_code_2_rounded,
               size: 64,
-              color: const Color(0xff19335A).withValues(alpha: 0.3),
+              color: secondaryText,
             ),
             const SizedBox(height: 12),
             Text(
@@ -950,13 +973,13 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
               style: GoogleFonts.montserrat(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xff19335A).withValues(alpha: 0.7),
+                color: primaryText,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'View transaction history, mark returns, or apply fines.',
-              style: GoogleFonts.lato(fontSize: 13, color: Colors.grey[600]),
+              style: GoogleFonts.lato(fontSize: 13, color: secondaryText),
             ),
           ],
         ),
@@ -983,13 +1006,13 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
               style: GoogleFonts.montserrat(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color: primaryText,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'This member has no active or past transaction records.',
-              style: GoogleFonts.lato(fontSize: 13, color: Colors.grey[500]),
+              style: GoogleFonts.lato(fontSize: 13, color: secondaryText),
             ),
           ],
         ),
@@ -1021,10 +1044,12 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
 
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xff1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isReturned ? Colors.green.withValues(alpha: 0.3) : const Color(0xff19335A).withValues(alpha: 0.15),
+              color: isReturned
+                  ? Colors.green.withValues(alpha: isDark ? 0.45 : 0.3)
+                  : accentColor.withValues(alpha: isDark ? 0.35 : 0.15),
               width: 1.2,
             ),
             boxShadow: [
@@ -1057,7 +1082,7 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                           style: GoogleFonts.montserrat(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: const Color(0xff19335A),
+                            color: primaryText,
                           ),
                         ),
                       ],
@@ -1090,18 +1115,18 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                 // Dates Row
                 Row(
                   children: [
-                    Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey[600]),
+                    Icon(Icons.calendar_today_outlined, size: 14, color: secondaryText),
                     const SizedBox(width: 4),
                     Text(
                       'Issued: $issueDate',
-                      style: GoogleFonts.lato(fontSize: 12, color: Colors.grey[700]),
+                      style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
                     ),
                     const SizedBox(width: 16),
-                    Icon(Icons.event_repeat_rounded, size: 14, color: Colors.grey[600]),
+                    Icon(Icons.event_repeat_rounded, size: 14, color: secondaryText),
                     const SizedBox(width: 4),
                     Text(
                       'Due/Return: $returnDate',
-                      style: GoogleFonts.lato(fontSize: 12, color: Colors.grey[700]),
+                      style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
                     ),
                   ],
                 ),
@@ -1116,7 +1141,7 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                   style: GoogleFonts.montserrat(
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
-                    color: const Color(0xff19335A),
+                    color: accentColor,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -1142,10 +1167,10 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xff19335A).withValues(alpha: 0.06),
+                          color: accentColor.withValues(alpha: isDark ? 0.16 : 0.06),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: const Color(0xff19335A).withValues(alpha: 0.12),
+                            color: accentColor.withValues(alpha: isDark ? 0.3 : 0.12),
                           ),
                         ),
                         child: Text(
@@ -1153,7 +1178,7 @@ class _MemberTransactionsModalState extends State<MemberTransactionsModal> {
                           style: GoogleFonts.lato(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xff19335A),
+                            color: primaryText,
                           ),
                         ),
                       );

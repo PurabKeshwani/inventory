@@ -190,7 +190,7 @@ class _LoginFormState extends State<LoginForm> {
               ),
               decoration: InputDecoration(
                 prefixIcon: Icon(Icons.mail_outline_rounded, size: 20, color: accentColor),
-                hintText: "e.g. 2024.tanvi.jagade@ves.ac.in",
+                hintText: "e.g. member@ves.ac.in",
                 hintStyle: GoogleFonts.lato(
                   fontSize: 13,
                   color: isDark ? const Color(0xff64748B) : Colors.grey[400],

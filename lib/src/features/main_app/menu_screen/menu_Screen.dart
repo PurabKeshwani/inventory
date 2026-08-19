@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -258,10 +257,6 @@ class _LazyTransactionListViewState extends State<LazyTransactionListView> {
           .order('id', ascending: false)
           .range(0, _pageSize - 1);
 
-      if (widget.isDueOnly) {
-        query = query.neq('status', 'Returned');
-      }
-
       final List<dynamic> response = await query;
       final newItems = response
           .map((json) =>
@@ -294,10 +289,6 @@ class _LazyTransactionListViewState extends State<LazyTransactionListView> {
           .select()
           .order('id', ascending: false)
           .range(_currentOffset, _currentOffset + _pageSize - 1);
-
-      if (widget.isDueOnly) {
-        query = query.neq('status', 'Returned');
-      }
 
       final List<dynamic> response = await query;
       final newItems = response

@@ -530,6 +530,11 @@ class _FinesScreenState extends State<FinesScreen> {
   }
 
   void _showAddFineDialog() {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     final emailInputController = TextEditingController();
     final memberIdController = TextEditingController();
     final nameController = TextEditingController();
@@ -591,12 +596,44 @@ class _FinesScreenState extends State<FinesScreen> {
               left: 20,
               right: 20,
             ),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xff0F172A) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border.all(
+                color: isDark ? const Color(0xff334155) : Colors.transparent,
+              ),
             ),
-            child: SingleChildScrollView(
-              child: Form(
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                inputDecorationTheme: InputDecorationTheme(
+                  filled: true,
+                  fillColor: isDark ? const Color(0xff1E293B) : Colors.white,
+                  labelStyle: TextStyle(
+                    color: isDark ? const Color(0xff94A3B8) : Colors.grey[700],
+                  ),
+                  hintStyle: TextStyle(
+                    color: isDark ? const Color(0xff64748B) : Colors.grey[500],
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: isDark ? const Color(0xff334155) : const Color(0xffCBD5E1),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: accentColor,
+                      width: 1.3,
+                    ),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Form(
                 key: formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -610,16 +647,16 @@ class _FinesScreenState extends State<FinesScreen> {
                           style: GoogleFonts.montserrat(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xff19335A),
+                            color: primaryText,
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close, color: secondaryText),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
                     ),
-                    const Divider(),
+                    Divider(color: isDark ? const Color(0xff334155) : null),
                     const SizedBox(height: 10),
 
                     // Member Email Input + Lookup Button
@@ -630,11 +667,13 @@ class _FinesScreenState extends State<FinesScreen> {
                           child: TextFormField(
                             controller: emailInputController,
                             keyboardType: TextInputType.emailAddress,
+                            style: GoogleFonts.lato(
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
                             decoration: InputDecoration(
                               labelText: 'Member Email / ISA Login ID *',
-                              hintText: 'e.g. 2024.tanvi.jagade@ves.ac.in',
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              border: const OutlineInputBorder(),
+                              hintText: 'e.g. member@ves.ac.in',
+                              prefixIcon: Icon(Icons.email_outlined, color: accentColor),
                               suffixIcon: isLookingUp
                                   ? const Padding(
                                       padding: EdgeInsets.all(12),
@@ -646,8 +685,7 @@ class _FinesScreenState extends State<FinesScreen> {
                                       ),
                                     )
                                   : IconButton(
-                                      icon: const Icon(Icons.search,
-                                          color: Color(0xff19335A)),
+                                      icon: Icon(Icons.search, color: accentColor),
                                       tooltip: 'Fetch Member details',
                                       onPressed: () => performLookup(
                                           emailInputController.text),
@@ -732,7 +770,7 @@ class _FinesScreenState extends State<FinesScreen> {
                             controller: memberIdController,
                             decoration: const InputDecoration(
                               labelText: 'Member ID (ISA Login ID) *',
-                              hintText: 'e.g. 2024.tanvi.jagade',
+                              hintText: 'e.g. 2024.student.id',
                               prefixIcon: Icon(Icons.badge_outlined),
                               border: OutlineInputBorder(),
                             ),
@@ -748,7 +786,7 @@ class _FinesScreenState extends State<FinesScreen> {
                             controller: nameController,
                             decoration: const InputDecoration(
                               labelText: 'Member Name',
-                              hintText: 'e.g. Tanvi Jagade',
+                              hintText: 'e.g. Student Name',
                               prefixIcon: Icon(Icons.person_outline),
                               border: OutlineInputBorder(),
                             ),
@@ -899,10 +937,12 @@ class _FinesScreenState extends State<FinesScreen> {
                       Container(
                         constraints: const BoxConstraints(maxHeight: 220),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: isDark ? const Color(0xff1E293B) : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xff19335A).withValues(alpha: 0.2),
+                            color: isDark
+                                ? const Color(0xff334155)
+                                : const Color(0xff19335A).withValues(alpha: 0.2),
                           ),
                           boxShadow: [
                             BoxShadow(
@@ -1284,8 +1324,9 @@ class _FinesScreenState extends State<FinesScreen> {
                 ),
               ),
             ),
-          );
-        },
+          ),
+        );
+      },
       ),
     );
   }

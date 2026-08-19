@@ -177,16 +177,16 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: isDark ? const Color(0xff0F172A) : Colors.grey[50],
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(color: isDark ? const Color(0xff334155) : Colors.grey[300]!),
                 ),
                 child: Column(
                   children: [
                     BarcodeWidget(
                       data: sku,
                       height: 80,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                     const SizedBox(height: 10),
                     Row(
@@ -198,7 +198,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 2,
-                            color: Colors.black87,
+                            color: primaryText,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -233,8 +233,8 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff19335A),
-                    foregroundColor: Colors.white,
+                    backgroundColor: isDark ? const Color(0xff38BDF8) : const Color(0xff19335A),
+                    foregroundColor: isDark ? const Color(0xff080E1A) : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -264,8 +264,14 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
   }
 
   void _showComponentActionsBottomSheet(Outputcomponent item) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -279,7 +285,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: isDark ? const Color(0xff334155) : Colors.grey[300],
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -289,11 +295,11 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xff19335A).withValues(alpha: 0.08),
+                      color: accentColor.withValues(alpha: isDark ? 0.2 : 0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.inventory_2_rounded,
-                        color: Color(0xff19335A), size: 22),
+                    child: Icon(Icons.inventory_2_rounded,
+                        color: accentColor, size: 22),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -305,14 +311,14 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                           style: GoogleFonts.sourceCodePro(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xff19335A),
+                            color: primaryText,
                           ),
                         ),
                         Text(
                           '${widget.component.name} • Box: ${item.boxNo}',
                           style: GoogleFonts.lato(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: secondaryText,
                           ),
                         ),
                       ],
@@ -321,20 +327,20 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              const Divider(height: 1),
+              Divider(height: 1, color: isDark ? const Color(0xff334155) : null),
               const SizedBox(height: 8),
 
               // Option 1: View Barcode
               Material(
                 color: Colors.transparent,
                 child: ListTile(
-                  leading: const Icon(Icons.qr_code_2_rounded,
-                      color: Color(0xff19335A)),
+                  leading: Icon(Icons.qr_code_2_rounded,
+                      color: accentColor),
                   title: Text('View Barcode',
                       style: GoogleFonts.montserrat(
-                          fontSize: 14, fontWeight: FontWeight.w600)),
+                          fontSize: 14, fontWeight: FontWeight.w600, color: primaryText)),
                   subtitle: Text('Show, copy or download barcode image',
-                      style: GoogleFonts.lato(fontSize: 12)),
+                      style: GoogleFonts.lato(fontSize: 12, color: secondaryText)),
                   onTap: () {
                     Navigator.pop(ctx);
                     _showBarcodeDialog(item);
@@ -346,13 +352,13 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
               Material(
                 color: Colors.transparent,
                 child: ListTile(
-                  leading: const Icon(Icons.edit_note_rounded,
-                      color: Color(0xff0845BB)),
+                  leading: Icon(Icons.edit_note_rounded,
+                    color: isDark ? const Color(0xff60A5FA) : const Color(0xff0845BB)),
                   title: Text('Edit Component',
                       style: GoogleFonts.montserrat(
-                          fontSize: 14, fontWeight: FontWeight.w600)),
+                      fontSize: 14, fontWeight: FontWeight.w600, color: primaryText)),
                   subtitle: Text('Change box number, stock quantity, or notes',
-                      style: GoogleFonts.lato(fontSize: 12)),
+                    style: GoogleFonts.lato(fontSize: 12, color: secondaryText)),
                   onTap: () {
                     Navigator.pop(ctx);
                     _showEditFullComponentDialog(item);

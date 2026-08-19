@@ -321,40 +321,42 @@ class EmailReminderService {
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Enter your 16-character Google Workspace App Password for "isa.vesit@ves.ac.in" to send automated due & fine notices directly from the app.',
-              style: GoogleFonts.lato(fontSize: 12.5, color: isDark ? const Color(0xff94A3B8) : Colors.grey[700]),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: senderCtrl,
-              style: GoogleFonts.lato(color: isDark ? Colors.white : Colors.black87),
-              decoration: InputDecoration(
-                labelText: 'Sender Email Address',
-                hintText: 'isa.vesit@ves.ac.in',
-                filled: true,
-                fillColor: isDark ? const Color(0xff0F172A) : const Color(0xffF8FAFC),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Enter your 16-character Google Workspace App Password for "isa.vesit@ves.ac.in" to send automated due & fine notices directly from the app.',
+                style: GoogleFonts.lato(fontSize: 12.5, color: isDark ? const Color(0xff94A3B8) : Colors.grey[700]),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passCtrl,
-              obscureText: true,
-              style: GoogleFonts.lato(color: isDark ? Colors.white : Colors.black87),
-              decoration: InputDecoration(
-                labelText: 'Google App Password',
-                hintText: '16-character app password (e.g. xxxx xxxx xxxx xxxx)',
-                filled: true,
-                fillColor: isDark ? const Color(0xff0F172A) : const Color(0xffF8FAFC),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              const SizedBox(height: 14),
+              TextField(
+                controller: senderCtrl,
+                style: GoogleFonts.lato(color: isDark ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
+                  labelText: 'Sender Email Address',
+                  hintText: 'isa.vesit@ves.ac.in',
+                  filled: true,
+                  fillColor: isDark ? const Color(0xff0F172A) : const Color(0xffF8FAFC),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: passCtrl,
+                obscureText: true,
+                style: GoogleFonts.lato(color: isDark ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
+                  labelText: 'Google App Password',
+                  hintText: '16-character app password (e.g. xxxx xxxx xxxx xxxx)',
+                  filled: true,
+                  fillColor: isDark ? const Color(0xff0F172A) : const Color(0xffF8FAFC),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

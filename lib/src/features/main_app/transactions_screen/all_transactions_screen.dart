@@ -274,7 +274,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
   List<Map<String, dynamic>> _filterTransactions({required bool isDueOnly}) {
     return _allTransactions.where((tx) {
       final status = (tx['status']?.toString() ?? 'Issued').trim().toLowerCase();
-      final isReturned = status == 'returned';
+      final isReturned = status == 'returned' ||
+          status == 'return' ||
+          status == 'returned to inventory' ||
+          status == 'closed';
 
       if (isDueOnly && isReturned) return false;
       if (!isDueOnly && !isReturned) return false;
@@ -679,13 +682,17 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     final dueList = _filterTransactions(isDueOnly: true);
     final pastList = _filterTransactions(isDueOnly: false);
 
     return Scaffold(
-      backgroundColor: const Color(0xffF4F7FB),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: const Color(0xff19335A),
+        backgroundColor: isDark ? const Color(0xff0F172A) : const Color(0xff19335A),
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
@@ -727,71 +734,87 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
           ],
         ),
       ),
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(14.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: CAppTheme.bgGradient(context),
+        ),
+        child: Column(
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.all(14.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xff1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? const Color(0xff334155) : Colors.grey[300]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: GoogleFonts.lato(
+                    fontSize: 13,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (val) {
-                  setState(() {
-                    _searchQuery = val.trim();
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search by Student Name, ID, Class, or Component...',
-                  hintStyle: GoogleFonts.lato(fontSize: 13, color: Colors.grey[500]),
-                  prefixIcon: const Icon(Icons.search, color: Color(0xff19335A), size: 20),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              _searchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  onChanged: (val) {
+                    setState(() {
+                      _searchQuery = val.trim();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search by Student Name, ID, Class, or Component...',
+                    hintStyle: GoogleFonts.lato(
+                      fontSize: 13,
+                      color: isDark ? const Color(0xff64748B) : Colors.grey[500],
+                    ),
+                    prefixIcon: Icon(Icons.search, color: accentColor, size: 20),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear, size: 18, color: secondaryText),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Tab Views
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildTransactionList(dueList, isDueTab: true),
-                      _buildTransactionList(pastList, isDueTab: false),
-                    ],
-                  ),
-          ),
-        ],
+            // Tab Views
+            Expanded(
+              child: _isLoading
+                  ? Center(child: CircularProgressIndicator(color: accentColor))
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildTransactionList(dueList, isDueTab: true),
+                        _buildTransactionList(pastList, isDueTab: false),
+                      ],
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTransactionList(List<Map<String, dynamic>> list, {required bool isDueTab}) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+
     if (list.isEmpty) {
       return Center(
         child: Column(
@@ -808,7 +831,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
               style: GoogleFonts.montserrat(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color: primaryText,
               ),
             ),
             const SizedBox(height: 4),
@@ -816,7 +839,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
               isDueTab
                   ? 'All borrowed components have been safely returned.'
                   : 'No completed return records match your query.',
-              style: GoogleFonts.lato(fontSize: 13, color: Colors.grey[500]),
+              style: GoogleFonts.lato(fontSize: 13, color: secondaryText),
             ),
           ],
         ),
@@ -828,7 +851,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
         if (isDueTab && list.isNotEmpty)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.white,
+            color: isDark ? const Color(0xff0F172A) : Colors.white,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -837,7 +860,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
                   style: GoogleFonts.montserrat(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: const Color(0xff19335A),
+                    color: primaryText,
                   ),
                 ),
                 Row(
@@ -890,6 +913,11 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
   }
 
   Widget _buildTransactionCard(Map<String, dynamic> tx, {required bool isDueTab}) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     final txId = tx['transaction_id']?.toString() ?? 'N/A';
     final borrowerName = tx['name']?.toString() ?? 'Unknown Student';
     final memberId = tx['id']?.toString() ?? '';
@@ -898,17 +926,24 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
     final issueDate = tx['issuedate']?.toString() ?? 'N/A';
     final returnDate = tx['returndate']?.toString() ?? 'N/A';
     final status = (tx['status']?.toString() ?? (isDueTab ? 'Issued' : 'Returned')).trim();
-    final isReturned = !isDueTab || status.toLowerCase() == 'returned';
+    final normalizedStatus = status.toLowerCase();
+    final isReturned = !isDueTab ||
+      normalizedStatus == 'returned' ||
+      normalizedStatus == 'return' ||
+      normalizedStatus == 'returned to inventory' ||
+      normalizedStatus == 'closed';
 
     final pkgList = _parsePackage(tx['package']);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xff1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDueTab ? Colors.orange.withValues(alpha: 0.35) : Colors.green.withValues(alpha: 0.25),
+          color: isDueTab
+              ? Colors.orange.withValues(alpha: isDark ? 0.5 : 0.35)
+              : Colors.green.withValues(alpha: isDark ? 0.45 : 0.25),
           width: isDueTab ? 1.4 : 1.0,
         ),
         boxShadow: [
@@ -933,12 +968,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
                     children: [
                       CircleAvatar(
                         radius: 18,
-                        backgroundColor: const Color(0xff19335A).withValues(alpha: 0.1),
+                        backgroundColor: accentColor.withValues(alpha: 0.12),
                         child: Text(
                           borrowerName.isNotEmpty ? borrowerName[0].toUpperCase() : 'S',
                           style: GoogleFonts.montserrat(
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xff19335A),
+                            color: accentColor,
                             fontSize: 14,
                           ),
                         ),
@@ -953,13 +988,13 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
                               style: GoogleFonts.montserrat(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
-                                color: const Color(0xff19335A),
+                                color: primaryText,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
                               'ID: $memberId • Class: $division',
-                              style: GoogleFonts.lato(fontSize: 11, color: Colors.grey[700]),
+                              style: GoogleFonts.lato(fontSize: 11, color: secondaryText),
                             ),
                           ],
                         ),
@@ -1004,35 +1039,48 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xff19335A),
+                    color: primaryText,
                   ),
                 ),
                 if (phone.isNotEmpty)
                   Text(
                     'Phone: $phone',
-                    style: GoogleFonts.lato(fontSize: 12, color: Colors.grey[700]),
+                    style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
                   ),
               ],
             ),
             const SizedBox(height: 4),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
               children: [
-                Icon(Icons.calendar_today_outlined, size: 12, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  'Issued: $issueDate',
-                  style: GoogleFonts.lato(fontSize: 11, color: Colors.grey[700]),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.calendar_today_outlined, size: 12, color: secondaryText),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Issued: $issueDate',
+                      style: GoogleFonts.lato(fontSize: 11, color: secondaryText),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Icon(Icons.event_repeat_rounded, size: 12, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  isReturned ? 'Returned: $returnDate' : 'Due: $returnDate',
-                  style: GoogleFonts.lato(
-                    fontSize: 11,
-                    fontWeight: isDueTab ? FontWeight.bold : FontWeight.normal,
-                    color: isDueTab ? Colors.orange[900] : Colors.grey[700],
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.event_repeat_rounded, size: 12, color: secondaryText),
+                    const SizedBox(width: 4),
+                    Text(
+                      isReturned ? 'Returned: $returnDate' : 'Due: $returnDate',
+                      style: GoogleFonts.lato(
+                        fontSize: 11,
+                        fontWeight: isDueTab ? FontWeight.bold : FontWeight.normal,
+                        color: isDueTab
+                            ? (isDark ? const Color(0xffFDBA74) : Colors.orange[900])
+                            : secondaryText,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1052,16 +1100,16 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      color: const Color(0xff19335A).withValues(alpha: 0.05),
+                      color: accentColor.withValues(alpha: isDark ? 0.14 : 0.05),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xff19335A).withValues(alpha: 0.1)),
+                      border: Border.all(color: accentColor.withValues(alpha: isDark ? 0.25 : 0.1)),
                     ),
                     child: Text(
                       '$cName × $qty ${sku.isNotEmpty ? "($sku)" : ""}',
                       style: GoogleFonts.lato(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xff19335A),
+                        color: primaryText,
                       ),
                     ),
                   );
@@ -1071,8 +1119,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen>
             ],
 
             // Actions Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 if (isDueTab && !isReturned) ...[
                   IconButton(

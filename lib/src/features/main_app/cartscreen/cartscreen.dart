@@ -65,6 +65,7 @@ class _CartscreenState extends State<Cartscreen> {
 
   // Pick Custom Expected Return Date
   Future<void> _selectExpectedReturnDate() async {
+    final isDark = CAppTheme.isDark(context);
     final picked = await showDatePicker(
       context: context,
       initialDate: _expectedReturnDate,
@@ -73,10 +74,11 @@ class _CartscreenState extends State<Cartscreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xff19335A),
-              onPrimary: Colors.white,
-              onSurface: Color(0xff19335A),
+            colorScheme: (isDark ? const ColorScheme.dark() : const ColorScheme.light()).copyWith(
+              primary: isDark ? const Color(0xff38BDF8) : const Color(0xff19335A),
+              onPrimary: isDark ? const Color(0xff080E1A) : Colors.white,
+              onSurface: isDark ? const Color(0xffF8FAFC) : const Color(0xff19335A),
+              surface: isDark ? const Color(0xff1E293B) : Colors.white,
             ),
           ),
           child: child!,
@@ -325,18 +327,30 @@ class _CartscreenState extends State<Cartscreen> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      builder: (dialogContext) {
+        final isDark = CAppTheme.isDark(dialogContext);
+        final primaryText = CAppTheme.primaryTextColor(dialogContext);
+        final secondaryText = CAppTheme.secondaryTextColor(dialogContext);
+        final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
+        return AlertDialog(
+        backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+          ),
+        ),
         title: Row(
           children: [
-            const Icon(Icons.qr_code_scanner_rounded, color: Color(0xff19335A)),
+            Icon(Icons.qr_code_scanner_rounded, color: accentColor),
             const SizedBox(width: 8),
             Text(
               'Scan Member QR',
               style: GoogleFonts.montserrat(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
-                color: const Color(0xff19335A),
+                color: primaryText,
               ),
             ),
           ],
@@ -382,10 +396,11 @@ class _CartscreenState extends State<Cartscreen> {
               scannerController.stop();
               Navigator.of(dialogContext).pop();
             },
-            child: Text('Cancel', style: GoogleFonts.lato(color: Colors.grey[700])),
+            child: Text('Cancel', style: GoogleFonts.lato(color: secondaryText)),
           ),
         ],
-      ),
+      );
+      },
     );
   }
 
@@ -623,7 +638,7 @@ class _CartscreenState extends State<Cartscreen> {
                       style: GoogleFonts.montserrat(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xff19335A),
+                        color: primaryText,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -632,21 +647,27 @@ class _CartscreenState extends State<Cartscreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xffF4F8FC),
+                              color: isDark ? const Color(0xff0F172A) : const Color(0xffF4F8FC),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: isDark ? const Color(0xff334155) : Colors.grey[300]!),
                             ),
                             child: TextField(
                               controller: searchMemberController,
                               onSubmitted: (val) => _lookupAndFillMember(val),
-                              style: GoogleFonts.lato(fontSize: 13, color: Colors.black87),
+                              style: GoogleFonts.lato(
+                                fontSize: 13,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
                               decoration: InputDecoration(
                                 hintText: 'Enter Email, ISA Login ID or Name...',
-                                hintStyle: GoogleFonts.lato(fontSize: 12, color: Colors.grey[500]),
-                                prefixIcon: const Icon(Icons.search, color: Color(0xff19335A), size: 18),
+                                hintStyle: GoogleFonts.lato(
+                                  fontSize: 12,
+                                  color: isDark ? const Color(0xff64748B) : Colors.grey[500],
+                                ),
+                                prefixIcon: Icon(Icons.search, color: accentColor, size: 18),
                                 suffixIcon: searchMemberController.text.isNotEmpty
                                     ? IconButton(
-                                        icon: const Icon(Icons.clear, size: 16),
+                                        icon: Icon(Icons.clear, size: 16, color: secondaryText),
                                         onPressed: () {
                                           searchMemberController.clear();
                                           setState(() {
@@ -671,8 +692,8 @@ class _CartscreenState extends State<Cartscreen> {
                         // Fetch Button
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xff19335A),
-                            foregroundColor: Colors.white,
+                            backgroundColor: accentColor,
+                            foregroundColor: isDark ? const Color(0xff080E1A) : Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           ),
@@ -691,11 +712,11 @@ class _CartscreenState extends State<Cartscreen> {
                         // Scan QR Button
                         IconButton(
                           style: IconButton.styleFrom(
-                            backgroundColor: const Color(0xff19335A).withValues(alpha: 0.1),
+                            backgroundColor: accentColor.withValues(alpha: isDark ? 0.2 : 0.1),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             padding: const EdgeInsets.all(10),
                           ),
-                          icon: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xff19335A), size: 20),
+                          icon: Icon(Icons.qr_code_scanner_rounded, color: accentColor, size: 20),
                           tooltip: 'Scan Member QR',
                           onPressed: _scanQRCode,
                         ),
@@ -716,15 +737,15 @@ class _CartscreenState extends State<Cartscreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xff19335A).withValues(alpha: 0.06),
+                          color: accentColor.withValues(alpha: isDark ? 0.16 : 0.06),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xff19335A).withValues(alpha: 0.2)),
+                          border: Border.all(color: accentColor.withValues(alpha: isDark ? 0.3 : 0.2)),
                         ),
                         child: Row(
                           children: [
                             CircleAvatar(
                               radius: 20,
-                              backgroundColor: const Color(0xff19335A),
+                              backgroundColor: accentColor,
                               child: Text(
                                 _verifiedMember!['name']?.isNotEmpty == true
                                     ? _verifiedMember!['name']![0].toUpperCase()
@@ -748,7 +769,7 @@ class _CartscreenState extends State<Cartscreen> {
                                         style: GoogleFonts.montserrat(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
-                                          color: const Color(0xff19335A),
+                                          color: primaryText,
                                         ),
                                       ),
                                       const SizedBox(width: 6),
@@ -772,12 +793,12 @@ class _CartscreenState extends State<Cartscreen> {
                                   const SizedBox(height: 2),
                                   Text(
                                     'ID: ${_verifiedMember!['member_id']} • Class: ${_verifiedMember!['class']}',
-                                    style: GoogleFonts.lato(fontSize: 11, color: Colors.grey[700]),
+                                    style: GoogleFonts.lato(fontSize: 11, color: secondaryText),
                                   ),
                                   if (_verifiedMember!['email']?.isNotEmpty == true)
                                     Text(
                                       _verifiedMember!['email']!,
-                                      style: GoogleFonts.lato(fontSize: 11, color: Colors.grey[600]),
+                                      style: GoogleFonts.lato(fontSize: 11, color: secondaryText),
                                     ),
                                 ],
                               ),
@@ -849,10 +870,10 @@ class _CartscreenState extends State<Cartscreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
-                          color: const Color(0xffF4F8FC),
+                          color: isDark ? const Color(0xff0F172A) : const Color(0xffF4F8FC),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xff19335A).withValues(alpha: 0.25),
+                            color: accentColor.withValues(alpha: isDark ? 0.4 : 0.25),
                           ),
                         ),
                         child: Row(
@@ -863,12 +884,12 @@ class _CartscreenState extends State<Cartscreen> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xff19335A).withValues(alpha: 0.1),
+                                    color: accentColor.withValues(alpha: isDark ? 0.2 : 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.calendar_month_rounded,
-                                    color: Color(0xff19335A),
+                                    color: accentColor,
                                     size: 20,
                                   ),
                                 ),
@@ -881,7 +902,7 @@ class _CartscreenState extends State<Cartscreen> {
                                       style: GoogleFonts.montserrat(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xff19335A),
+                                        color: primaryText,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -897,9 +918,9 @@ class _CartscreenState extends State<Cartscreen> {
                                 ),
                               ],
                             ),
-                            const Icon(
+                            Icon(
                               Icons.edit_calendar_rounded,
-                              color: Color(0xff19335A),
+                              color: accentColor,
                               size: 20,
                             ),
                           ],
@@ -914,7 +935,7 @@ class _CartscreenState extends State<Cartscreen> {
                       style: GoogleFonts.lato(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[700],
+                        color: secondaryText,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -937,11 +958,13 @@ class _CartscreenState extends State<Cartscreen> {
                           labelStyle: GoogleFonts.lato(
                             fontSize: 11,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? Colors.white : const Color(0xff19335A),
+                            color: isSelected
+                                ? (isDark ? const Color(0xff080E1A) : Colors.white)
+                                : primaryText,
                           ),
                           selected: isSelected,
-                          selectedColor: const Color(0xff19335A),
-                          backgroundColor: Colors.grey[100],
+                          selectedColor: accentColor,
+                          backgroundColor: isDark ? const Color(0xff0F172A) : Colors.grey[100],
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1022,12 +1045,12 @@ class _CartscreenState extends State<Cartscreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xff1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: isDark ? const Color(0xff334155) : Colors.grey[200]!),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

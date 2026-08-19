@@ -92,6 +92,10 @@ class _FineReceiptDialogState extends State<FineReceiptDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isPhone = screenWidth < 640;
+
     final fine = widget.fine;
     final memberName = fine.memberName ?? fine.memberId;
     final itemDesc = fine.componentName != null && fine.componentName!.isNotEmpty
@@ -102,10 +106,16 @@ class _FineReceiptDialogState extends State<FineReceiptDialog> {
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isPhone ? 8 : 16,
+        vertical: isPhone ? 8 : 24,
+      ),
       child: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 680, maxHeight: 860),
+          constraints: BoxConstraints(
+            maxWidth: isPhone ? screenWidth : 680,
+            maxHeight: isPhone ? screenHeight * 0.97 : 860,
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -132,10 +142,10 @@ class _FineReceiptDialogState extends State<FineReceiptDialog> {
                     const Icon(Icons.receipt_rounded, color: Colors.white, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      'Payment Receipt Preview',
+                      isPhone ? 'Receipt Preview' : 'Payment Receipt Preview',
                       style: GoogleFonts.montserrat(
                         color: Colors.white,
-                        fontSize: 15,
+                        fontSize: isPhone ? 13 : 15,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -175,22 +185,29 @@ class _FineReceiptDialogState extends State<FineReceiptDialog> {
               // Scrollable Receipt Document View (Paper Style)
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-                  child: Container(
-                    padding: const EdgeInsets.all(28),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade200),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isPhone ? 10 : 28,
+                    vertical: isPhone ? 10 : 24,
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: isPhone ? 640 : null,
+                      child: Container(
+                        padding: EdgeInsets.all(isPhone ? 18 : 28),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Column(
+                        child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ── 1. Top Section: Company Name / Address & Logo Box ──
@@ -711,11 +728,13 @@ class _FineReceiptDialogState extends State<FineReceiptDialog> {
                             ),
                           ],
                         ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
+            ),
 
               // Bottom Button Toolbar
               Container(
@@ -725,8 +744,10 @@ class _FineReceiptDialogState extends State<FineReceiptDialog> {
                   borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
                   border: Border(top: BorderSide(color: Colors.grey.shade200)),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
@@ -738,34 +759,46 @@ class _FineReceiptDialogState extends State<FineReceiptDialog> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xff19335A),
                         side: const BorderSide(color: Color(0xff19335A)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      icon: const Icon(Icons.share_rounded, size: 18),
+                      icon: const Icon(Icons.download_rounded, size: 16),
+                      label: Text(
+                        'Download',
+                        style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                      onPressed: _handleDownload,
+                    ),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xff19335A),
+                        side: const BorderSide(color: Color(0xff19335A)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.share_rounded, size: 16),
                       label: Text(
                         'Share PDF',
-                        style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                       onPressed: _handleShare,
                     ),
-                    const SizedBox(width: 10),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xff19335A),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 2,
                       ),
-                      icon: const Icon(Icons.print_rounded, size: 18),
+                      icon: const Icon(Icons.print_rounded, size: 16),
                       label: Text(
-                        'Print / Download Receipt',
-                        style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 13),
+                        'Print / Save',
+                        style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                       onPressed: _handlePrint,
                     ),
