@@ -46,6 +46,10 @@ A robust Inventory Management System built using **Flutter** and **Supabase**, d
 - Dart
 - Supabase Project
 - OneSignal Account
+  
+### Hosting 
+web app : https://isa-vesit-inventory.netlify.app/
+apk : https://drive.google.com/file/d/10rdKv8xuhab-bs8FLfaqtXYdXBanRcBp/view?usp=drive_link
 
 ### Clone the repo
 ```bash
