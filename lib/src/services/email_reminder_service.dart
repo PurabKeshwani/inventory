@@ -24,17 +24,21 @@ class EmailReminderService {
   static const String _prefAppPasswordKey = 'isa_email_app_password';
   static const String _prefSenderEmailKey = 'isa_email_sender_address';
 
-  // Fallback placeholder - can be configured in app
-  static const String _fallbackAppPassword = '';
+  // Hardcoded default App Password for isa.vesit@ves.ac.in
+  static const String _fallbackAppPassword = 'pzpz xolh qtth jsxi';
 
   static Future<String> getSenderEmail() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefSenderEmailKey) ?? defaultSender;
+    final saved = prefs.getString(_prefSenderEmailKey)?.trim();
+    if (saved != null && saved.isNotEmpty) return saved;
+    return defaultSender;
   }
 
   static Future<String> getAppPassword() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_prefAppPasswordKey) ?? _fallbackAppPassword;
+    final saved = prefs.getString(_prefAppPasswordKey)?.trim();
+    if (saved != null && saved.isNotEmpty) return saved;
+    return _fallbackAppPassword;
   }
 
   static Future<void> saveEmailCredentials({
