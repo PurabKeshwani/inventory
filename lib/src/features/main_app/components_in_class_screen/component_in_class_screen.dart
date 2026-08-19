@@ -177,16 +177,16 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: isDark ? const Color(0xff0F172A) : Colors.grey[50],
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(color: isDark ? const Color(0xff334155) : Colors.grey[300]!),
                 ),
                 child: Column(
                   children: [
                     BarcodeWidget(
                       data: sku,
                       height: 80,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                     const SizedBox(height: 10),
                     Row(
@@ -198,7 +198,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 2,
-                            color: Colors.black87,
+                            color: primaryText,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -233,8 +233,8 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff19335A),
-                    foregroundColor: Colors.white,
+                    backgroundColor: isDark ? const Color(0xff38BDF8) : const Color(0xff19335A),
+                    foregroundColor: isDark ? const Color(0xff080E1A) : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -264,8 +264,14 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
   }
 
   void _showComponentActionsBottomSheet(Outputcomponent item) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -279,7 +285,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: isDark ? const Color(0xff334155) : Colors.grey[300],
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -289,11 +295,11 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xff19335A).withValues(alpha: 0.08),
+                      color: accentColor.withValues(alpha: isDark ? 0.2 : 0.08),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.inventory_2_rounded,
-                        color: Color(0xff19335A), size: 22),
+                    child: Icon(Icons.inventory_2_rounded,
+                        color: accentColor, size: 22),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -305,14 +311,14 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                           style: GoogleFonts.sourceCodePro(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xff19335A),
+                            color: primaryText,
                           ),
                         ),
                         Text(
                           '${widget.component.name} • Box: ${item.boxNo}',
                           style: GoogleFonts.lato(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: secondaryText,
                           ),
                         ),
                       ],
@@ -321,54 +327,63 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              const Divider(height: 1),
+              Divider(height: 1, color: isDark ? const Color(0xff334155) : null),
               const SizedBox(height: 8),
 
               // Option 1: View Barcode
-              ListTile(
-                leading: const Icon(Icons.qr_code_2_rounded,
-                    color: Color(0xff19335A)),
-                title: Text('View Barcode',
-                    style: GoogleFonts.montserrat(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
-                subtitle: Text('Show, copy or download barcode image',
-                    style: GoogleFonts.lato(fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showBarcodeDialog(item);
-                },
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: Icon(Icons.qr_code_2_rounded,
+                      color: accentColor),
+                  title: Text('View Barcode',
+                      style: GoogleFonts.montserrat(
+                          fontSize: 14, fontWeight: FontWeight.w600, color: primaryText)),
+                  subtitle: Text('Show, copy or download barcode image',
+                      style: GoogleFonts.lato(fontSize: 12, color: secondaryText)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showBarcodeDialog(item);
+                  },
+                ),
               ),
 
               // Option 2: Edit Component
-              ListTile(
-                leading: const Icon(Icons.edit_note_rounded,
-                    color: Color(0xff0845BB)),
-                title: Text('Edit Component',
-                    style: GoogleFonts.montserrat(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
-                subtitle: Text('Change box number, stock quantity, or notes',
-                    style: GoogleFonts.lato(fontSize: 12)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showEditFullComponentDialog(item);
-                },
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading: Icon(Icons.edit_note_rounded,
+                    color: isDark ? const Color(0xff60A5FA) : const Color(0xff0845BB)),
+                  title: Text('Edit Component',
+                      style: GoogleFonts.montserrat(
+                      fontSize: 14, fontWeight: FontWeight.w600, color: primaryText)),
+                  subtitle: Text('Change box number, stock quantity, or notes',
+                    style: GoogleFonts.lato(fontSize: 12, color: secondaryText)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showEditFullComponentDialog(item);
+                  },
+                ),
               ),
 
               // Option 3: Delete Component
-              ListTile(
-                leading:
-                    const Icon(Icons.delete_forever_rounded, color: Colors.red),
-                title: Text('Delete Component',
-                    style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.red)),
-                subtitle: Text('Permanently remove this SKU instance from inventory',
-                    style: GoogleFonts.lato(fontSize: 12, color: Colors.red[300])),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _confirmDeleteComponent(item);
-                },
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  leading:
+                      const Icon(Icons.delete_forever_rounded, color: Colors.red),
+                  title: Text('Delete Component',
+                      style: GoogleFonts.montserrat(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red)),
+                  subtitle: Text('Permanently remove this SKU instance from inventory',
+                      style: GoogleFonts.lato(fontSize: 12, color: Colors.red[300])),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _confirmDeleteComponent(item);
+                  },
+                ),
               ),
             ],
           ),
@@ -483,17 +498,110 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
       final newStock = int.tryParse(stockController.text.trim()) ?? item.stock;
       final newNote = noteController.text.trim();
 
-      final tableName = _tableName;
+      String targetTable = _tableName;
+      if (targetTable.isEmpty) {
+        targetTable = widget.category ?? componentControl.ClassName.value;
+      }
+
       try {
-        await supabase.from(tableName).update({
-          'boxNo': newBox,
+        Map<String, dynamic>? existingRow;
+        String skuColumn = 'skuid';
+        String foundTable = targetTable.isNotEmpty ? targetTable : 'Microcontroller';
+
+        // 1. Check target table first
+        if (targetTable.isNotEmpty) {
+          try {
+            final res = await supabase.from(targetTable).select().eq('skuid', item.skuid).maybeSingle();
+            if (res != null) {
+              existingRow = Map<String, dynamic>.from(res);
+              skuColumn = 'skuid';
+              foundTable = targetTable;
+            }
+          } catch (_) {
+            try {
+              final res = await supabase.from(targetTable).select().eq('skuId', item.skuid).maybeSingle();
+              if (res != null) {
+                existingRow = Map<String, dynamic>.from(res);
+                skuColumn = 'skuId';
+                foundTable = targetTable;
+              }
+            } catch (_) {}
+          }
+        }
+
+        // 2. If not found in target table, search all 7 tables
+        if (existingRow == null) {
+          for (final tbl in Selectquerycontroller.allCategoryTables) {
+            try {
+              final res = await supabase.from(tbl).select().eq('skuid', item.skuid).maybeSingle();
+              if (res != null) {
+                existingRow = Map<String, dynamic>.from(res);
+                foundTable = tbl;
+                skuColumn = 'skuid';
+                break;
+              }
+            } catch (_) {
+              try {
+                final res = await supabase.from(tbl).select().eq('skuId', item.skuid).maybeSingle();
+                if (res != null) {
+                  existingRow = Map<String, dynamic>.from(res);
+                  foundTable = tbl;
+                  skuColumn = 'skuId';
+                  break;
+                }
+              } catch (_) {}
+            }
+          }
+        }
+
+        final updatePayload = <String, dynamic>{
           'stock': newStock,
-          'warning': newNote,
-        }).eq('skuid', item.skuid);
+        };
+
+        if (existingRow != null && existingRow.containsKey('boxNo')) {
+          updatePayload['boxNo'] = newBox;
+        } else {
+          updatePayload['boxno'] = newBox;
+        }
+
+        if (existingRow != null && existingRow.containsKey('warning')) {
+          final currentVal = existingRow['warning'];
+          if (currentVal is int || currentVal == null) {
+            updatePayload['warning'] = int.tryParse(newNote);
+          } else {
+            updatePayload['warning'] = newNote;
+          }
+        }
+
+        try {
+          await supabase.from(foundTable).update(updatePayload).eq(skuColumn, item.skuid);
+        } catch (err) {
+          // Fallback: update only stock and boxno
+          final fallbackPayload = <String, dynamic>{
+            'stock': newStock,
+          };
+          if (existingRow?.containsKey('boxNo') == true) {
+            fallbackPayload['boxNo'] = newBox;
+          } else {
+            fallbackPayload['boxno'] = newBox;
+          }
+          try {
+            await supabase.from(foundTable).update(fallbackPayload).eq(skuColumn, item.skuid);
+          } catch (_) {
+            if (fallbackPayload.containsKey('boxno')) {
+              fallbackPayload['boxNo'] = newBox;
+              fallbackPayload.remove('boxno');
+            } else {
+              fallbackPayload['boxno'] = newBox;
+              fallbackPayload.remove('boxNo');
+            }
+            await supabase.from(foundTable).update(fallbackPayload).eq(skuColumn, item.skuid);
+          }
+        }
 
         // Invalidate cache
         try {
-          Get.find<CacheController>().invalidate(tableName);
+          Get.find<CacheController>().invalidate(foundTable);
         } catch (_) {}
 
         await _refreshData();
@@ -502,7 +610,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Component updated successfully!'),
-              backgroundColor: Colors.green,
+              backgroundColor: Color(0xff15803D),
             ),
           );
         }
@@ -511,7 +619,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to update component: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: Colors.red[700],
             ),
           );
         }
@@ -555,13 +663,30 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
     );
 
     if (confirmed == true) {
-      final tableName = _tableName;
+      String targetTable = _tableName;
+      if (targetTable.isEmpty) {
+        targetTable = widget.category ?? componentControl.ClassName.value;
+      }
       try {
-        await supabase.from(tableName).delete().eq('skuid', item.skuid);
+        if (targetTable.isEmpty) {
+          for (final tbl in Selectquerycontroller.allCategoryTables) {
+            final check = await supabase.from(tbl).select('skuid').eq('skuid', item.skuid).maybeSingle();
+            if (check != null) {
+              targetTable = tbl;
+              break;
+            }
+          }
+        }
+
+        if (targetTable.isEmpty) {
+          throw Exception('Could not determine category table for component ${item.skuid}');
+        }
+
+        await supabase.from(targetTable).delete().eq('skuid', item.skuid);
 
         // Invalidate cache
         try {
-          Get.find<CacheController>().invalidate(tableName);
+          Get.find<CacheController>().invalidate(targetTable);
         } catch (_) {}
 
         await _refreshData();
@@ -579,7 +704,7 @@ class _ComponentInClassScreenState extends State<ComponentInClassScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to delete component: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: Colors.red[700],
             ),
           );
         }

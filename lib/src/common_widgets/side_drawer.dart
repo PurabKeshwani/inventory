@@ -224,29 +224,32 @@ class CustomSideDrawer extends StatelessWidget {
     required Color textColor,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
         ),
-        child: Icon(icon, color: iconColor, size: 20),
-      ),
-      title: Text(
-        title,
-        style: GoogleFonts.montserrat(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w600,
-          color: textColor,
+        title: Text(
+          title,
+          style: GoogleFonts.montserrat(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
         ),
+        trailing: Icon(
+          Icons.chevron_right_rounded,
+          size: 18,
+          color: textColor.withValues(alpha: 0.4),
+        ),
+        onTap: onTap,
       ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        size: 18,
-        color: textColor.withValues(alpha: 0.4),
-      ),
-      onTap: onTap,
     );
   }
 }

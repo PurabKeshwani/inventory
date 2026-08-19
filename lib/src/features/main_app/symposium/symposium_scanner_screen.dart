@@ -41,7 +41,7 @@ class _SymposiumScannerScreenState extends State<SymposiumScannerScreen> {
 
       final List<Map<String, dynamic>> funPackage = [
         {
-          "compname": "🎉 Symposium All-Access Pass 🚀",
+          "compname": "Symposium All-Access Pass",
           "skuid": "SYM-PASS",
           "Quantity": 1
         }

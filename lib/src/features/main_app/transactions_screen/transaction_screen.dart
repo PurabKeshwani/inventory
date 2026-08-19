@@ -80,10 +80,17 @@ class _TransactionScreenState extends State<TransactionScreen> {
           .single();
 
       // Check if the transaction is already returned
-      if (response['status'] == 'Returned') {
+      final status = (response['status']?.toString() ?? '').trim().toLowerCase();
+      final alreadyReturned = status == 'returned' ||
+          status == 'return' ||
+          status == 'returned to inventory' ||
+          status == 'closed';
+
+      if (alreadyReturned) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('This transaction has already been returned')),
+          const SnackBar(
+            content: Text('This transaction has already been returned'),
+          ),
         );
         return;
       }
@@ -212,28 +219,37 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
       _isProcessingScan = false; // reset guard for this new scan attempt
 
+      final isDark = CAppTheme.isDark(context);
+      final dialogWidth = MediaQuery.of(context).size.width * 0.92;
+
 
       // Show scanner in a dialog
       showDialog(
         context: context,
         builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           child: Container(
-            height: 400,
-            width: 350,
+            height: 420,
+            width: dialogWidth,
+            constraints: const BoxConstraints(maxWidth: 420),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xff1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? const Color(0xff334155) : Colors.transparent,
+              ),
             ),
             child: Column(
               children: [
                 // Header
                 Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    color: Color(0xff19335A),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xff0F172A) : const Color(0xff19335A),
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
@@ -263,7 +279,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 Expanded(
                   child: Stack(
                     children: [
-                        MobileScanner(
+                      MobileScanner(
                         onDetect: (capture) {
                           if (_isProcessingScan) return;
                           final List<Barcode> barcodes = capture.barcodes;
@@ -284,7 +300,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       Container(
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: Colors.white,
+                            color: isDark ? const Color(0xff38BDF8) : Colors.white,
                             width: 2,
                           ),
                           borderRadius: BorderRadius.circular(12),
@@ -300,8 +316,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           height: 20,
                           decoration: const BoxDecoration(
                             border: Border(
-                              top: BorderSide(color: Colors.white, width: 3),
-                              left: BorderSide(color: Colors.white, width: 3),
+                              top: BorderSide(color: Color(0xff38BDF8), width: 3),
+                              left: BorderSide(color: Color(0xff38BDF8), width: 3),
                             ),
                           ),
                         ),
@@ -314,8 +330,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           height: 20,
                           decoration: const BoxDecoration(
                             border: Border(
-                              top: BorderSide(color: Colors.white, width: 3),
-                              right: BorderSide(color: Colors.white, width: 3),
+                              top: BorderSide(color: Color(0xff38BDF8), width: 3),
+                              right: BorderSide(color: Color(0xff38BDF8), width: 3),
                             ),
                           ),
                         ),
@@ -328,8 +344,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           height: 20,
                           decoration: const BoxDecoration(
                             border: Border(
-                              bottom: BorderSide(color: Colors.white, width: 3),
-                              left: BorderSide(color: Colors.white, width: 3),
+                              bottom: BorderSide(color: Color(0xff38BDF8), width: 3),
+                              left: BorderSide(color: Color(0xff38BDF8), width: 3),
                             ),
                           ),
                         ),
@@ -342,8 +358,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
                           height: 20,
                           decoration: const BoxDecoration(
                             border: Border(
-                              bottom: BorderSide(color: Colors.white, width: 3),
-                              right: BorderSide(color: Colors.white, width: 3),
+                              bottom: BorderSide(color: Color(0xff38BDF8), width: 3),
+                              right: BorderSide(color: Color(0xff38BDF8), width: 3),
                             ),
                           ),
                         ),

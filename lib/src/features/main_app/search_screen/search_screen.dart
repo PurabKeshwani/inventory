@@ -397,83 +397,86 @@ class _SearchScreenState extends State<SearchScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             decoration: CAppTheme.cardDecoration(context, radius: 14),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => ComponentInClassScreen(component: component),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => ComponentInClassScreen(component: component),
+                                    ),
+                                  );
+                                },
+                                title: Text(
+                                  component.name,
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: primaryText,
                                   ),
-                                );
-                              },
-                              title: Text(
-                                component.name,
-                                style: GoogleFonts.montserrat(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: primaryText,
                                 ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: component.stock == 0
-                                              ? (isDark ? Colors.red.withOpacity(0.2) : Colors.red.withOpacity(0.12))
-                                              : component.stock <= 2
-                                                  ? (isDark ? Colors.orange.withOpacity(0.2) : Colors.orange.withOpacity(0.12))
-                                                  : (isDark ? Colors.green.withOpacity(0.2) : Colors.green.withOpacity(0.12)),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
                                             color: component.stock == 0
-                                                ? (isDark ? Colors.red.withOpacity(0.4) : Colors.transparent)
+                                                ? (isDark ? Colors.red.withOpacity(0.2) : Colors.red.withOpacity(0.12))
                                                 : component.stock <= 2
-                                                    ? (isDark ? Colors.orange.withOpacity(0.4) : Colors.transparent)
-                                                    : (isDark ? Colors.green.withOpacity(0.4) : Colors.transparent),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          component.stock == 0
-                                              ? 'Out of Stock'
-                                              : 'Stock: ${component.stock}',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                            color: component.stock == 0
-                                                ? (isDark ? Colors.red[300] : Colors.red[800])
-                                                : component.stock <= 2
-                                                    ? (isDark ? Colors.orange[300] : Colors.orange[900])
-                                                    : (isDark ? Colors.green[300] : Colors.green[800]),
-                                          ),
-                                        ),
-                                      ),
-                                      if (component.boxNo.isNotEmpty) ...[
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            'Box: ${component.boxNo}',
-                                            style: GoogleFonts.lato(
-                                              fontSize: 12,
-                                              color: secondaryText,
-                                              fontWeight: FontWeight.w500,
+                                                    ? (isDark ? Colors.orange.withOpacity(0.2) : Colors.orange.withOpacity(0.12))
+                                                    : (isDark ? Colors.green.withOpacity(0.2) : Colors.green.withOpacity(0.12)),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: component.stock == 0
+                                                  ? (isDark ? Colors.red.withOpacity(0.4) : Colors.transparent)
+                                                  : component.stock <= 2
+                                                      ? (isDark ? Colors.orange.withOpacity(0.4) : Colors.transparent)
+                                                      : (isDark ? Colors.green.withOpacity(0.4) : Colors.transparent),
                                             ),
-                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          child: Text(
+                                            component.stock == 0
+                                                ? 'Out of Stock'
+                                                : 'Stock: ${component.stock}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                              color: component.stock == 0
+                                                  ? (isDark ? Colors.red[300] : Colors.red[800])
+                                                  : component.stock <= 2
+                                                      ? (isDark ? Colors.orange[300] : Colors.orange[900])
+                                                      : (isDark ? Colors.green[300] : Colors.green[800]),
+                                            ),
                                           ),
                                         ),
+                                        if (component.boxNo.isNotEmpty) ...[
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Box: ${component.boxNo}',
+                                              style: GoogleFonts.lato(
+                                                fontSize: 12,
+                                                color: secondaryText,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
                                       ],
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              trailing: Icon(
-                                Icons.chevron_right_rounded,
-                                size: 20,
-                                color: secondaryText.withValues(alpha: 0.6),
+                                    ),
+                                  ],
+                                ),
+                                trailing: Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 20,
+                                  color: secondaryText.withValues(alpha: 0.6),
+                                ),
                               ),
                             ),
                           );

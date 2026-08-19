@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:inventory/src/features/analytics/utils/csv_download.dart';
 import 'package:inventory/src/utils/theme/theme.dart';
 import 'models/bulk_upload_models.dart';
 import 'services/bulk_upload_service.dart';
@@ -19,6 +20,7 @@ class _BulkUploadScreenState extends State<BulkUploadScreen> {
   String? _csvContent;
   int _rowCount = 0;
   bool _isUploading = false;
+  bool _isDownloadingSample = false;
   BulkUploadReport? _report;
 
   Future<void> _pickFile() async {
@@ -38,6 +40,51 @@ class _BulkUploadScreenState extends State<BulkUploadScreen> {
       _rowCount = lines.length > 1 ? lines.length - 1 : 0; // Exclude header
       _report = null;
     });
+  }
+
+  Future<void> _downloadSampleCsv() async {
+    if (_isDownloadingSample) return;
+    setState(() => _isDownloadingSample = true);
+
+    const sampleCsv =
+        'category,skuid,name,stock,boxno,warning\r\n'
+        'Microcontroller,MC01,Arduino Uno R3,15,MC-01,1\r\n'
+        'Microcontroller,MC02,ESP32 NodeMCU,20,MC-02,0\r\n'
+        'Sensors,SN01,Ultrasonic Sensor HC-SR04,25,SN-01,0\r\n'
+        'Sensors,SN02,DHT11 Temperature Humidity,18,SN-02,0\r\n'
+        'Communication Modules,CM01,HC-05 Bluetooth Module,12,CM-01,0\r\n'
+        'Communication Modules,CM02,NRF24L01 Wireless Module,10,CM-02,0\r\n'
+        'Displays and Indicators,DI01,16x2 I2C LCD Display,14,DI-01,1\r\n'
+        'Displays and Indicators,DI02,0.96 inch OLED Display I2C,10,DI-02,1\r\n'
+        'Actuators and Motors,AM01,SG90 Micro Servo 9g,30,AM-01,1\r\n'
+        'Actuators and Motors,AM02,L298N Motor Driver,12,AM-02,0\r\n'
+        'Power Components,PC01,9V Battery Clip with DC Jack,50,PC-01,0\r\n'
+        'Power Components,PC02,MB102 Breadboard Power Supply,15,PC-02,0\r\n'
+        'Others,OT01,830 Point Solderless Breadboard,40,OT-01,0\r\n'
+        'Others,OT02,Jumper Wires M-to-M 40pcs,60,OT-02,0';
+
+    try {
+      await downloadCsv(sampleCsv, 'isa_inventory_sample_template.csv');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sample CSV template exported! Fill it out and upload it back.'),
+            backgroundColor: Color(0xff15803D),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download template: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDownloadingSample = false);
+    }
   }
 
   Future<void> _upload() async {
@@ -93,6 +140,19 @@ class _BulkUploadScreenState extends State<BulkUploadScreen> {
             fontSize: 18,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: _isDownloadingSample
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.file_download_outlined, color: Colors.white),
+            tooltip: 'Download Sample CSV',
+            onPressed: _downloadSampleCsv,
+          ),
+        ],
       ),
       body: Container(
         width: double.infinity,
@@ -185,20 +245,38 @@ class _BulkUploadScreenState extends State<BulkUploadScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(Icons.attach_file_rounded, size: 18, color: accentColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Upload CSV File',
-                          style: GoogleFonts.montserrat(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: primaryText,
+                        Row(
+                          children: [
+                            Icon(Icons.attach_file_rounded, size: 18, color: accentColor),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Upload CSV File',
+                              style: GoogleFonts.montserrat(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: primaryText,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Quick Sample Download Link
+                        TextButton.icon(
+                          onPressed: _downloadSampleCsv,
+                          icon: Icon(Icons.file_download_outlined, size: 16, color: accentColor),
+                          label: Text(
+                            'Get Template',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: accentColor,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 10),
 
                     // File Picker Dropzone
                     InkWell(
@@ -303,8 +381,8 @@ class _BulkUploadScreenState extends State<BulkUploadScreen> {
 
               const SizedBox(height: 20),
 
-              // Format Guidelines Card
-              const _InstructionsCard(),
+              // Format Guidelines & Template Download Card
+              _InstructionsCard(onDownloadSample: _downloadSampleCsv),
             ],
           ),
         ),
@@ -314,7 +392,8 @@ class _BulkUploadScreenState extends State<BulkUploadScreen> {
 }
 
 class _InstructionsCard extends StatelessWidget {
-  const _InstructionsCard();
+  final VoidCallback onDownloadSample;
+  const _InstructionsCard({required this.onDownloadSample});
 
   @override
   Widget build(BuildContext context) {
@@ -330,16 +409,21 @@ class _InstructionsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.info_outline_rounded, size: 18, color: accentColor),
-              const SizedBox(width: 8),
-              Text(
-                'CSV Formatting Guide',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: primaryText,
-                ),
+              Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, size: 18, color: accentColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    'CSV Formatting Guide',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: primaryText,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -354,6 +438,24 @@ class _InstructionsCard extends StatelessWidget {
             'If a skuid already exists in that category, its stock/boxno will be updated. '
             'If it is a new SKU, a new hardware record is created.',
             style: GoogleFonts.lato(fontSize: 12.5, color: secondaryText, height: 1.55),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: accentColor, width: 1.2),
+                foregroundColor: accentColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: Text(
+                'Download Sample Template (.CSV)',
+                style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              onPressed: onDownloadSample,
+            ),
           ),
         ],
       ),
@@ -425,20 +527,23 @@ class _ReportCard extends StatelessWidget {
             decoration: CAppTheme.cardDecoration(context, radius: 14),
             child: Column(
               children: report.failed.map((f) {
-                return ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
-                  title: Text(
-                    'Row ${f.rowNumber}${f.skuid.isNotEmpty ? " (${f.skuid})" : ""}',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: primaryText,
+                return Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
+                    title: Text(
+                      'Row ${f.rowNumber}${f.skuid.isNotEmpty ? " (${f.skuid})" : ""}',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: primaryText,
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    f.message,
-                    style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
+                    subtitle: Text(
+                      f.message,
+                      style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
+                    ),
                   ),
                 );
               }).toList(),

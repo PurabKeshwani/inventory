@@ -9,6 +9,7 @@ import 'package:inventory/src/controllers/cache_controller.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/main_app/fines/models/fine_model.dart';
 import 'package:inventory/src/features/main_app/fines/services/fine_service.dart';
+import 'package:inventory/src/utils/theme/theme.dart';
 
 class MemberTransactionsScreen extends StatefulWidget {
   const MemberTransactionsScreen({super.key});
@@ -721,6 +722,9 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CAppTheme.isDark(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -731,7 +735,7 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color(0xff19335A),
+        backgroundColor: isDark ? const Color(0xff0F172A) : const Color(0xff19335A),
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -743,15 +747,8 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 242, 250, 255),
-              Color.fromARGB(255, 255, 255, 255),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+        decoration: BoxDecoration(
+          gradient: CAppTheme.bgGradient(context),
         ),
         child: Column(
           children: [
@@ -763,9 +760,9 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isDark ? const Color(0xff1E293B) : Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: isDark ? const Color(0xff334155) : Colors.grey[300]!),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.03),
@@ -777,10 +774,17 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                       child: TextField(
                         controller: _searchController,
                         onSubmitted: (_) => _handleSearch(),
+                        style: GoogleFonts.lato(
+                          fontSize: 13,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Enter Email, ISA Login ID, or Name...',
-                          hintStyle: GoogleFonts.lato(fontSize: 13, color: Colors.grey[500]),
-                          prefixIcon: const Icon(Icons.search, color: Color(0xff19335A), size: 20),
+                          hintStyle: GoogleFonts.lato(
+                            fontSize: 13,
+                            color: isDark ? const Color(0xff64748B) : Colors.grey[500],
+                          ),
+                          prefixIcon: Icon(Icons.search, color: accentColor, size: 20),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
                                   icon: const Icon(Icons.clear, size: 18),
@@ -805,7 +809,7 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                   // Search Submit Button
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xff19335A),
+                      backgroundColor: accentColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -823,11 +827,11 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                   // QR Scanner Button
                   IconButton(
                     style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xff19335A).withValues(alpha: 0.1),
+                      backgroundColor: accentColor.withValues(alpha: isDark ? 0.2 : 0.1),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.all(12),
                     ),
-                    icon: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xff19335A)),
+                    icon: Icon(Icons.qr_code_scanner_rounded, color: accentColor),
                     tooltip: 'Scan Member QR',
                     onPressed: _startQRScan,
                   ),
@@ -925,6 +929,9 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
   }
 
   Widget _buildTransactionsContent() {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
     if (_selectedMember == null) {
       return Center(
         child: Column(
@@ -933,7 +940,7 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
             Icon(
               Icons.person_search_rounded,
               size: 72,
-              color: const Color(0xff19335A).withValues(alpha: 0.3),
+              color: secondaryText,
             ),
             const SizedBox(height: 14),
             Text(
@@ -941,13 +948,13 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
               style: GoogleFonts.montserrat(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xff19335A).withValues(alpha: 0.8),
+                color: primaryText,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               'Active transactions will be displayed first with instant return & fine options.',
-              style: GoogleFonts.lato(fontSize: 13, color: Colors.grey[600]),
+              style: GoogleFonts.lato(fontSize: 13, color: secondaryText),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1006,7 +1013,7 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                     style: GoogleFonts.montserrat(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xff19335A),
+                      color: primaryText,
                     ),
                   ),
                 ],
@@ -1015,8 +1022,8 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: _activeTransactions.isNotEmpty
-                      ? Colors.orange.withValues(alpha: 0.15)
-                      : Colors.grey[200],
+                      ? Colors.orange.withValues(alpha: isDark ? 0.22 : 0.15)
+                      : (isDark ? const Color(0xff334155) : Colors.grey[200]),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -1024,7 +1031,9 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: _activeTransactions.isNotEmpty ? Colors.orange[900] : Colors.grey[700],
+                    color: _activeTransactions.isNotEmpty
+                        ? (isDark ? const Color(0xffFDBA74) : Colors.orange[900])
+                        : (isDark ? const Color(0xffCBD5E1) : Colors.grey[700]),
                   ),
                 ),
               ),
@@ -1117,7 +1126,7 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                       style: GoogleFonts.montserrat(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
+                        color: secondaryText,
                       ),
                     ),
                   ],
@@ -1135,6 +1144,11 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
   }
 
   Widget _buildTransactionCard(Map<String, dynamic> tx, {required bool isActive}) {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final secondaryText = CAppTheme.secondaryTextColor(context);
+    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+
     final txId = tx['transaction_id']?.toString() ?? 'N/A';
     final status = (tx['status']?.toString() ?? (isActive ? 'Issued' : 'Returned')).trim();
     final isReturned = !isActive || status.toLowerCase() == 'returned';
@@ -1155,12 +1169,12 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xff1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isActive
-              ? Colors.orange.withValues(alpha: 0.35)
-              : Colors.green.withValues(alpha: 0.3),
+              ? Colors.orange.withValues(alpha: isDark ? 0.5 : 0.35)
+              : Colors.green.withValues(alpha: isDark ? 0.5 : 0.3),
           width: isActive ? 1.5 : 1.0,
         ),
         boxShadow: [
@@ -1193,7 +1207,7 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                       style: GoogleFonts.montserrat(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
-                        color: const Color(0xff19335A),
+                        color: primaryText,
                       ),
                     ),
                   ],
@@ -1224,20 +1238,31 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
             const SizedBox(height: 8),
 
             // Dates Row
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
               children: [
-                Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey[600]),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.calendar_today_outlined, size: 14, color: secondaryText),
                 const SizedBox(width: 4),
                 Text(
                   'Issued: $issueDate',
-                  style: GoogleFonts.lato(fontSize: 12, color: Colors.grey[700]),
+                      style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
                 ),
-                const SizedBox(width: 16),
-                Icon(Icons.event_repeat_rounded, size: 14, color: Colors.grey[600]),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.event_repeat_rounded, size: 14, color: secondaryText),
                 const SizedBox(width: 4),
                 Text(
                   isReturned ? 'Returned: $returnDate' : 'Due: $returnDate',
-                  style: GoogleFonts.lato(fontSize: 12, color: Colors.grey[700]),
+                      style: GoogleFonts.lato(fontSize: 12, color: secondaryText),
+                ),
+                  ],
                 ),
               ],
             ),
@@ -1252,7 +1277,7 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
               style: GoogleFonts.montserrat(
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
-                color: const Color(0xff19335A),
+                color: accentColor,
               ),
             ),
             const SizedBox(height: 6),
@@ -1289,7 +1314,7 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
                       style: GoogleFonts.lato(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xff19335A),
+                        color: primaryText,
                       ),
                     ),
                   );
@@ -1299,8 +1324,10 @@ class _MemberTransactionsScreenState extends State<MemberTransactionsScreen> {
             const SizedBox(height: 12),
 
             // Action Buttons Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 // Apply Fine Button
                 OutlinedButton.icon(

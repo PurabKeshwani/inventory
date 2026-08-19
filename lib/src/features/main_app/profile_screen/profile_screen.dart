@@ -102,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
 
-    // Parse name from email format (e.g. 2024.tanvi.jagade@ves.ac.in -> Tanvi Jagade)
+    // Parse name from email format (e.g. 2024.firstname.lastname@ves.ac.in -> Firstname Lastname)
     try {
       final namePart = normalized.split('@').first;
       final segments = namePart.split(RegExp(r'[\._\-]'));
@@ -304,7 +304,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             () {
                               final name = emailGet.Namefrommail.value.isNotEmpty
                                   ? emailGet.Namefrommail.value
-                                  : (_displayName.isNotEmpty ? _displayName : 'Tanvi Jagade');
+                                  : (_displayName.isNotEmpty ? _displayName : 'Council Member');
                               return Text(
                                 name,
                                 textAlign: TextAlign.center,
