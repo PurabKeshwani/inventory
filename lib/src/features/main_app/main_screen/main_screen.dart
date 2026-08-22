@@ -47,12 +47,30 @@ class _DashboardState extends State<MainScreen> {
   }
 
   void naamkaran() async {
-    final response = await _supabase
-        .from('admins')
-        .select()
-        .eq('emailid', emailGet.emailget.value);
-    final data = response.first;
-    emailGet.Namefrommail.value = data['name'];
+    try {
+      var currentEmail = emailGet.emailget.value.trim();
+      if (currentEmail.isEmpty) {
+        final sessionUser = _supabase.auth.currentUser;
+        if (sessionUser?.email != null) {
+          currentEmail = sessionUser!.email!.trim();
+          emailGet.emailget.value = currentEmail;
+        }
+      }
+      if (currentEmail.isNotEmpty) {
+        final response = await _supabase
+            .from('admins')
+            .select('name')
+            .ilike('emailid', currentEmail);
+        if (response.isNotEmpty && response.first['name'] != null) {
+          emailGet.Namefrommail.value = response.first['name'].toString();
+        } else if (emailGet.Namefrommail.value.isEmpty) {
+          emailGet.Namefrommail.value =
+              Emailcontroller.formatNameFromEmail(currentEmail);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error retrieving admin name in MainScreen: $e');
+    }
   }
 
   @override

@@ -1,69 +1,157 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:inventory/src/features/main_app/main_screen/main_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Emailcontroller extends GetxController {
   RxString emailget = ''.obs;
   RxBool isValidating = false.obs;
   RxString Namefrommail = ''.obs;
+  RxBool isLoadingAdmins = false.obs;
 
-  final List<String> emails = [
-    'n.gopalkrishnan@ves.ac.in',
-    '2024.tanvi.jagade@ves.ac.in',
-    '2024.dhruv.sangam@ves.ac.in',
-    '2024.varun.santani@ves.ac.in',
-    '2024.nirmiti.nalawade@ves.ac.in',
-    'd2025.aditya.sasane@ves.ac.in',
-    '2024.sana.patil@ves.ac.in',
-    '2024.arnav.nair@ves.ac.in',
-    'adityamhatre2003@gmail.com',
-    'sahoocharchit@gmail.com',
-    '2022.kaustubh.natalkar@ves.ac.in',
-    'd2021.atishkar.singh@ves.ac.in',
-    'kaustubhworlikar1308@gmail.com',
-    'd2021.rashid.sarang@ves.ac.in',
-    '2022.gautam.singh@ves.ac.in',
-    'd2023.aniket.pandhari@ves.ac.in',
-    'Sinhaaakarsh0@gmail.com',
-    '2023.ronit.chugwani@ves.ac.in',
-    '2023.paayal.kapoor@ves.ac.in',
-    '2023.nidhi.bamhane@ves.ac.in',
-    '2023.krishnan.h@ves.ac.in',
-    '2023.akshay.nambiar@ves.ac.in'
-  ];
+  /// Dynamic list of authorized admin emails loaded from Supabase 'admins' table
+  final RxList<String> emails = <String>[].obs;
 
-  final Map<String, String> emailToName = {
-    'n.gopalkrishnan@ves.ac.in': 'N. Gopalkrishnan',
-    '2024.tanvi.jagade@ves.ac.in': 'Tanvi Jagade',
-    '2024.dhruv.sangam@ves.ac.in': 'Dhruv Sangam',
-    '2024.varun.santani@ves.ac.in': 'Varun Santani',
-    '2024.nirmiti.nalawade@ves.ac.in': 'Nirmiti Nalawade',
-    'd2025.aditya.sasane@ves.ac.in': 'Aditya Sasane',
-    '2024.sana.patil@ves.ac.in': 'Sana Patil',
-    '2024.arnav.nair@ves.ac.in': 'Arnav Nair',
-    'adityamhatre2003@gmail.com': 'Aditya Mhatre',
-    'sahoocharchit@gmail.com': 'Charchit Sahoo',
-    '2022.kaustubh.natalkar@ves.ac.in': 'Kaustubh Natalkar',
-    'd2021.atishkar.singh@ves.ac.in': 'Atishkar Singh',
-    'kaustubhworlikar1308@gmail.com': 'Kaustubh Worlikar',
-    'd2021.rashid.sarang@ves.ac.in': 'Rashid Sarang',
-    '2022.gautam.singh@ves.ac.in': 'Gautam Singh',
-    'd2023.aniket.pandhari@ves.ac.in': 'Aniket Pandhari',
-    'Sinhaaakarsh0@gmail.com': 'Aakarsh SInha',
-    '2023.ronit.chugwani@ves.ac.in': 'Ronit Chugwani',
-    '2023.paayal.kapoor@ves.ac.in': 'Paayal Kapoor',
-    '2023.nidhi.bamhane@ves.ac.in': 'Nidhi Bamhane',
-    '2023.krishnan.h@ves.ac.in': 'Krishnan H',
-    '2023.akshay.nambiar@ves.ac.in': 'Akshay Nambiar'
-  };
+  /// Dynamic mapping of admin email -> admin display name loaded from Supabase
+  final RxMap<String, String> emailToName = <String, String>{}.obs;
 
-  void mailchecker() {
-    if (emails.contains(emailget.value)) {
-      print('email is valid');
-      isValidating.value = true;
-      Get.to(const MainScreen());
-    } else {
-      isValidating.value = false;
+  SupabaseClient? get _supabase {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
     }
   }
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchAdminsFromSupabase();
+  }
+
+  /// Fetches all registered admins from Supabase 'admins' table and caches them
+  Future<void> fetchAdminsFromSupabase() async {
+    final client = _supabase;
+    if (client == null) return;
+
+    try {
+      isLoadingAdmins.value = true;
+      final response = await client
+          .from('admins')
+          .select('emailid, name')
+          .order('name', ascending: true);
+
+      final List<dynamic> records = response as List<dynamic>;
+      final List<String> fetchedEmails = [];
+      final Map<String, String> fetchedMap = {};
+
+      for (final row in records) {
+        final email = (row['emailid'] ?? '').toString().trim();
+        final name = (row['name'] ?? '').toString().trim();
+        if (email.isNotEmpty) {
+          fetchedEmails.add(email);
+          fetchedMap[email.toLowerCase()] =
+              name.isNotEmpty ? name : formatNameFromEmail(email);
+        }
+      }
+
+      emails.assignAll(fetchedEmails);
+      emailToName.assignAll(fetchedMap);
+    } catch (e) {
+      debugPrint('Error fetching admin roster from Supabase: $e');
+    } finally {
+      isLoadingAdmins.value = false;
+    }
+  }
+
+  /// Verifies if a given email is registered in Supabase 'admins' table.
+  /// If valid, sets [emailget], [Namefrommail], and [isValidating].
+  Future<bool> verifyAndSetAdmin(String email) async {
+    final trimmed = email.trim();
+    if (trimmed.isEmpty) {
+      isValidating.value = false;
+      return false;
+    }
+
+    final client = _supabase;
+    if (client != null) {
+      try {
+        // 1. Direct query to Supabase 'admins' table (case-insensitive)
+        final response = await client
+            .from('admins')
+            .select('emailid, name')
+            .ilike('emailid', trimmed)
+            .limit(1);
+
+        if (response.isNotEmpty) {
+          final data = response.first;
+          final resolvedEmail = (data['emailid'] ?? trimmed).toString().trim();
+          final resolvedName = (data['name'] ?? '').toString().trim().isNotEmpty
+              ? data['name'].toString().trim()
+              : formatNameFromEmail(resolvedEmail);
+
+          emailget.value = resolvedEmail;
+          Namefrommail.value = resolvedName;
+          isValidating.value = true;
+
+          // Ensure cached mappings include this admin
+          if (!emails.contains(resolvedEmail)) {
+            emails.add(resolvedEmail);
+          }
+          emailToName[resolvedEmail.toLowerCase()] = resolvedName;
+          return true;
+        }
+      } catch (e) {
+        debugPrint('Error verifying admin status against Supabase: $e');
+      }
+    }
+
+    // 2. Fallback: check already fetched cached list
+    final normalized = trimmed.toLowerCase();
+    final match = emails.firstWhereOrNull(
+      (e) => e.trim().toLowerCase() == normalized,
+    );
+    if (match != null) {
+      emailget.value = match;
+      Namefrommail.value =
+          emailToName[normalized] ?? formatNameFromEmail(match);
+      isValidating.value = true;
+      return true;
+    }
+
+    isValidating.value = false;
+    return false;
+  }
+
+  /// Verifies current [emailget] against Supabase and navigates to [MainScreen] if authorized.
+  Future<bool> mailchecker() async {
+    final valid = await verifyAndSetAdmin(emailget.value);
+    if (valid) {
+      Get.offAll(() => const MainScreen());
+      return true;
+    } else {
+      isValidating.value = false;
+      return false;
+    }
+  }
+
+  /// Formats an email like '2024.tanvi.jagade@ves.ac.in' into 'Tanvi Jagade'
+  static String formatNameFromEmail(String email) {
+    if (email.isEmpty) return 'Admin User';
+    try {
+      final namePart = email.trim().toLowerCase().split('@').first;
+      final segments = namePart.split(RegExp(r'[\._\-]'));
+      final validSegments = segments
+          .where((s) => !RegExp(r'^[0-9]+$').hasMatch(s) && s.isNotEmpty)
+          .toList();
+
+      if (validSegments.isNotEmpty) {
+        return validSegments
+            .map((s) => s.substring(0, 1).toUpperCase() + s.substring(1))
+            .join(' ');
+      }
+    } catch (_) {}
+    return 'Inventory Administrator';
+  }
 }
+

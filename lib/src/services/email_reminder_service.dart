@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mailer/mailer.dart';
@@ -24,8 +25,8 @@ class EmailReminderService {
   static const String _prefAppPasswordKey = 'isa_email_app_password';
   static const String _prefSenderEmailKey = 'isa_email_sender_address';
 
-  // Hardcoded default App Password for isa.vesit@ves.ac.in
-  static const String _fallbackAppPassword = 'pzpz xolh qtth jsxi';
+  // Configurable locally per device if needed (kept empty for web security)
+  static const String _fallbackAppPassword = '';
 
   static Future<String> getSenderEmail() async {
     final prefs = await SharedPreferences.getInstance();
@@ -76,6 +77,71 @@ class EmailReminderService {
     return null;
   }
 
+  /// Core dispatcher: Invokes Supabase Edge Function on Web, or native SMTP on Android/iOS
+  static Future<bool> _dispatchEmail({
+    required String sender,
+    required String password,
+    required String toEmail,
+    required String subject,
+    required String htmlContent,
+  }) async {
+    // 1. On Web or when no local password configured: Use Supabase Edge Function via standard HTTPS
+    if (kIsWeb || password.isEmpty) {
+      try {
+        final response = await Supabase.instance.client.functions.invoke(
+          'send-email',
+          body: {
+            'to': toEmail.trim(),
+            'subject': subject,
+            'html': htmlContent,
+          },
+        );
+
+        if (response.status == 200 || response.status == 201) {
+          return true;
+        } else {
+          final errorData = response.data;
+          String errorMsg = 'HTTP ${response.status}';
+          if (errorData is Map && errorData['error'] != null) {
+            errorMsg = errorData['error'].toString();
+          } else if (errorData != null) {
+            errorMsg = errorData.toString();
+          }
+          throw Exception(errorMsg);
+        }
+      } catch (e) {
+        throw Exception('Email dispatch error: $e');
+      }
+    }
+
+    // 2. On Mobile / Desktop (Android APK, iOS, Windows) if password configured locally: Native SMTP
+    try {
+      final smtpServer = gmail(sender, password);
+      final message = Message()
+        ..from = Address(sender, 'ISA VESIT INVENTORY')
+        ..recipients.add(toEmail.trim())
+        ..subject = subject
+        ..html = htmlContent;
+
+      final sendReport = await send(message, smtpServer);
+      return sendReport.toString().isNotEmpty;
+    } catch (e) {
+      // Fallback: If native SMTP encounters network/port blocks, route through Supabase Edge Function
+      try {
+        final response = await Supabase.instance.client.functions.invoke(
+          'send-email',
+          body: {
+            'to': toEmail.trim(),
+            'subject': subject,
+            'html': htmlContent,
+          },
+        );
+        if (response.status == 200 || response.status == 201) return true;
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
   /// Sends an Overdue Component Return Email Notice
   static Future<bool> sendDueReminderEmail({
     required String toEmail,
@@ -88,11 +154,6 @@ class EmailReminderService {
     final sender = await getSenderEmail();
     final password = await getAppPassword();
 
-    if (password.isEmpty) {
-      throw Exception('Please set your Google App Password in Settings (⚙️) first.');
-    }
-
-    final smtpServer = gmail(sender, password);
     final componentsListHtml = componentNames.map((c) => '<li><strong>$c</strong></li>').join('');
 
     final htmlContent = '''
@@ -173,18 +234,13 @@ class EmailReminderService {
 </html>
 ''';
 
-    final message = Message()
-      ..from = Address(sender, 'ISA VESIT INVENTORY')
-      ..recipients.add(toEmail.trim())
-      ..subject = '[ISA-VESIT INVENTORY] Reminder: Pending Component Return (#$transactionId)'
-      ..html = htmlContent;
-
-    try {
-      final sendReport = await send(message, smtpServer);
-      return sendReport.toString().isNotEmpty;
-    } catch (e) {
-      rethrow;
-    }
+    return _dispatchEmail(
+      sender: sender,
+      password: password,
+      toEmail: toEmail,
+      subject: '[ISA-VESIT INVENTORY] Reminder: Pending Component Return (#$transactionId)',
+      htmlContent: htmlContent,
+    );
   }
 
   /// Sends a Fine Payment Notice Email
@@ -198,12 +254,6 @@ class EmailReminderService {
   }) async {
     final sender = await getSenderEmail();
     final password = await getAppPassword();
-
-    if (password.isEmpty) {
-      throw Exception('Please set your Google App Password in Settings (⚙️) first.');
-    }
-
-    final smtpServer = gmail(sender, password);
 
     final htmlContent = '''
 <!DOCTYPE html>
@@ -281,18 +331,13 @@ class EmailReminderService {
 </html>
 ''';
 
-    final message = Message()
-      ..from = Address(sender, 'ISA VESIT INVENTORY')
-      ..recipients.add(toEmail.trim())
-      ..subject = '[ISA-VESIT INVENTORY] Notice: Pending Fine Payment (₹${amount.toStringAsFixed(0)})'
-      ..html = htmlContent;
-
-    try {
-      final sendReport = await send(message, smtpServer);
-      return sendReport.toString().isNotEmpty;
-    } catch (e) {
-      rethrow;
-    }
+    return _dispatchEmail(
+      sender: sender,
+      password: password,
+      toEmail: toEmail,
+      subject: '[ISA-VESIT INVENTORY] Notice: Pending Fine Payment (₹${amount.toStringAsFixed(0)})',
+      htmlContent: htmlContent,
+    );
   }
 
   /// App Password & Email Settings Config Dialog
