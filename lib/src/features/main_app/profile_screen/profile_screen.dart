@@ -56,20 +56,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // 2. Resolve Name from emailToName map or formatted email
     String resolvedName = _resolveNameFromEmail(email);
 
-    // 3. Try to fetch from Supabase 'admins' or 'members' table
     try {
       if (email.isNotEmpty) {
         final adminRes = await _supabase
             .from('admins')
-            .select()
-            .eq('emailid', email.toLowerCase());
+            .select('name')
+            .ilike('emailid', email.trim());
         if (adminRes.isNotEmpty && adminRes.first['name'] != null) {
           resolvedName = adminRes.first['name'].toString();
         } else {
           final memberRes = await _supabase
               .from('members')
-              .select()
-              .eq('email', email.toLowerCase());
+              .select('name')
+              .ilike('email', email.trim());
           if (memberRes.isNotEmpty && memberRes.first['name'] != null) {
             resolvedName = memberRes.first['name'].toString();
           }

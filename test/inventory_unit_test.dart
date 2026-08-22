@@ -125,11 +125,26 @@ void main() {
   });
 
   group('Emailcontroller Unit Tests', () {
-    test('Emailcontroller emails list contains expected lab admins', () {
+    test('formatNameFromEmail parses student and faculty email formats correctly', () {
+      expect(
+        Emailcontroller.formatNameFromEmail('2024.tanvi.jagade@ves.ac.in'),
+        'Tanvi Jagade',
+      );
+      expect(
+        Emailcontroller.formatNameFromEmail('n.gopalkrishnan@ves.ac.in'),
+        'N Gopalkrishnan',
+      );
+      expect(
+        Emailcontroller.formatNameFromEmail('2024.dhruv.sangam@ves.ac.in'),
+        'Dhruv Sangam',
+      );
+    });
+
+    test('Emailcontroller dynamic observables initialize properly', () {
       final ctrl = Emailcontroller();
-      expect(ctrl.emails.contains('2024.tanvi.jagade@ves.ac.in'), isTrue);
-      expect(ctrl.emails.contains('n.gopalkrishnan@ves.ac.in'), isTrue);
-      expect(ctrl.emailToName['2024.tanvi.jagade@ves.ac.in'], 'Tanvi Jagade');
+      expect(ctrl.emails, isA<List<String>>());
+      expect(ctrl.emailToName, isA<Map<String, String>>());
+      expect(ctrl.isValidating.value, isFalse);
     });
   });
 }

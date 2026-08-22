@@ -103,6 +103,25 @@ class _LoginFormState extends State<LoginForm> {
       if (response.user != null) {
         emailGet.emailget.value = email;
 
+        // Verify if user is an authorized admin in Supabase 'admins' table
+        final isAuthorizedAdmin = await emailGet.verifyAndSetAdmin(email);
+
+        if (!isAuthorizedAdmin) {
+          await supabase.auth.signOut();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  "Access denied: '$email' is not registered in the admin roster. Please contact the lab administrator.",
+                ),
+                backgroundColor: Colors.red[700],
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return;
+        }
+
         // Handle Remember Me persistence
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('email', email);
@@ -117,7 +136,7 @@ class _LoginFormState extends State<LoginForm> {
           await prefs.remove('saved_password');
         }
 
-        emailGet.mailchecker();
+        await emailGet.mailchecker();
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

@@ -4,6 +4,7 @@ import 'package:inventory/src/features/authentication/screens/login/login_screen
 import 'package:inventory/src/controllers/cache_controller.dart';
 import 'package:inventory/src/utils/theme/theme.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
+import 'package:inventory/src/features/authentication/controllers/emailcontroller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -29,9 +30,8 @@ void main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4Y3NhenhyZ2tyc2xicWV3b3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3NDQyODMsImV4cCI6MjAzNTMyMDI4M30.NcvtPsa_FC_3ozm4G43pDrY8XtO2zhtM2RVW1WFOy78',
   );
 
-  // Registered ONCE here, permanently. Every screen must use Get.find()
-  // instead of Get.put() for this controller — re-putting it wipes out
-  // whatever's in the cart, which was silently breaking the issue flow.
+  // Registered ONCE here, permanently.
+  Get.put(Emailcontroller(), permanent: true);
   Get.put(ComponentController(), permanent: true);
 
   // In-memory cache layer registered ONCE as permanent singleton.
