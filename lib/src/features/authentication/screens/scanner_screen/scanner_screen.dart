@@ -26,13 +26,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
         actions: [
           IconButton(
             icon: ValueListenableBuilder(
-              valueListenable: controller.torchState,
+              valueListenable: controller,
               builder: (context, state, child) {
-                switch (state) {
+                switch (state.torchState) {
                   case TorchState.off:
                     return const Icon(Icons.flash_off);
                   case TorchState.on:
                     return const Icon(Icons.flash_on);
+                  default:
+                    return const Icon(Icons.flash_off);
                 }
               },
             ),
@@ -40,9 +42,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
           IconButton(
             icon: ValueListenableBuilder(
-              valueListenable: controller.cameraFacingState,
+              valueListenable: controller,
               builder: (context, state, child) {
-                switch (state) {
+                switch (state.cameraDirection) {
                   case CameraFacing.front:
                     return const Icon(Icons.camera_front);
                   case CameraFacing.back:

@@ -133,10 +133,10 @@ class _DashboardState extends State<Dashboard> {
                 children: [
                   IconButton(
                     icon: ValueListenableBuilder(
-                      valueListenable: _scannerController.torchState,
+                      valueListenable: _scannerController,
                       builder: (context, state, child) {
                         return Icon(
-                          state == TorchState.on ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                          state.torchState == TorchState.on ? Icons.flash_on_rounded : Icons.flash_off_rounded,
                           color: accentColor,
                         );
                       },
