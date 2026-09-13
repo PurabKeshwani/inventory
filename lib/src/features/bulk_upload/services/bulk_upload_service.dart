@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:csv/csv.dart';
+import 'package:flutter/foundation.dart';
 import '../models/bulk_upload_models.dart';
 
 class BulkUploadService {
@@ -14,6 +15,7 @@ class BulkUploadService {
     'sensors': 'Sensors',
     'communication module': 'Communication Modules',
     'communication modules': 'Communication Modules',
+    'communication & input modules': 'Communication Modules',
     'display': 'Displays and Indicators',
     'displays': 'Displays and Indicators',
     'displays and indicators': 'Displays and Indicators',
@@ -22,17 +24,25 @@ class BulkUploadService {
     'actuators and motors': 'Actuators and Motors',
     'power component': 'Power Components',
     'power components': 'Power Components',
+    'mechanical & hardware': 'Others',
+    'mechanical and hardware': 'Others',
+    'hardware': 'Others',
+    'mechanical': 'Others',
+    'tools and equipment': 'Others',
     'other': 'Others',
     'others': 'Others',
   };
 
-  String? _resolveCategory(String raw) => _categoryAliases[raw.trim().toLowerCase()];
+  static String? _resolveCategory(String raw) => _categoryAliases[raw.trim().toLowerCase()];
+
+  @visibleForTesting
+  static String? resolveCategoryForTest(String raw) => _resolveCategory(raw);
 
   Future<BulkUploadReport> uploadFromCsv(String csvContent) async {
     final rows = const CsvToListConverter(eol: '\n').convert(csvContent);
 
     if (rows.isEmpty) {
-      return BulkUploadReport(added: 0, updated: 0, failed: [
+      return BulkUploadReport(added: 0, skipped: 0, failed: [
         BulkUploadRowResult(rowNumber: 0, skuid: '', message: 'CSV file is empty'),
       ]);
     }
@@ -46,7 +56,7 @@ class BulkUploadService {
     final warningIdx = header.indexOf('warning');
 
     if (catIdx == -1 || skuIdx == -1 || nameIdx == -1 || stockIdx == -1) {
-      return BulkUploadReport(added: 0, updated: 0, failed: [
+      return BulkUploadReport(added: 0, skipped: 0, failed: [
         BulkUploadRowResult(
           rowNumber: 0,
           skuid: '',
@@ -69,9 +79,9 @@ class BulkUploadService {
       final rawCategory = cell(catIdx);
       final skuid = cell(skuIdx);
       final name = cell(nameIdx);
-      final boxno = boxIdx == -1 ? '' : cell(boxIdx);
+      final boxnoRaw = boxIdx == -1 ? '' : cell(boxIdx);
       final stockRaw = cell(stockIdx);
-      final warning = warningIdx == -1 ? '' : cell(warningIdx);
+      final warningRaw = warningIdx == -1 ? '' : cell(warningIdx);
 
       final category = _resolveCategory(rawCategory);
       if (category == null) {
@@ -94,27 +104,28 @@ class BulkUploadService {
         continue;
       }
 
+      final String? finalBoxNo = (boxnoRaw.isEmpty || boxnoRaw.toLowerCase() == 'null') ? null : boxnoRaw;
+      final String finalWarning = (warningRaw.isEmpty || warningRaw.toLowerCase() == 'null') ? '' : warningRaw;
+
       byCategory.putIfAbsent(category, () => []);
       byCategory[category]!.add({
         'skuid': skuid,
         'name': name,
-        'boxno': boxno,
+        'boxno': finalBoxNo,
         'stock': stock,
-        'warning': warning,
+        'warning': finalWarning,
         '_rowNumber': rowNum,
       });
     }
 
     int added = 0;
-    int updated = 0;
+    int skipped = 0;
 
     for (final entry in byCategory.entries) {
       final tableName = entry.key;
       final incomingRows = entry.value;
       final incomingSkuids = incomingRows.map((r) => r['skuid'] as String).toList();
 
-      // Check which skuids already exist in this category, so we can report
-      // "added" vs "updated" accurately rather than a single vague count.
       Set<String> existingSkuids = {};
       try {
         final existing =
@@ -131,30 +142,36 @@ class BulkUploadService {
         continue;
       }
 
-      final upsertPayload = incomingRows
-          .map((r) => Map<String, dynamic>.from(r)..remove('_rowNumber'))
-          .toList();
+      final List<Map<String, dynamic>> newRowsToInsert = [];
 
-      try {
-        await _supabase.from(tableName).upsert(upsertPayload, onConflict: 'skuid');
-        for (final r in incomingRows) {
-          if (existingSkuids.contains(r['skuid'])) {
-            updated++;
-          } else {
-            added++;
-          }
+      for (final r in incomingRows) {
+        if (existingSkuids.contains(r['skuid'])) {
+          skipped++;
+        } else {
+          newRowsToInsert.add(r);
         }
-      } catch (e) {
-        for (final r in incomingRows) {
-          failed.add(BulkUploadRowResult(
-            rowNumber: r['_rowNumber'] as int,
-            skuid: r['skuid'] as String,
-            message: 'Database error: $e',
-          ));
+      }
+
+      if (newRowsToInsert.isNotEmpty) {
+        final insertPayload = newRowsToInsert
+            .map((r) => Map<String, dynamic>.from(r)..remove('_rowNumber'))
+            .toList();
+
+        try {
+          await _supabase.from(tableName).insert(insertPayload);
+          added += newRowsToInsert.length;
+        } catch (e) {
+          for (final r in newRowsToInsert) {
+            failed.add(BulkUploadRowResult(
+              rowNumber: r['_rowNumber'] as int,
+              skuid: r['skuid'] as String,
+              message: 'Database error: $e',
+            ));
+          }
         }
       }
     }
 
-    return BulkUploadReport(added: added, updated: updated, failed: failed);
+    return BulkUploadReport(added: added, skipped: skipped, failed: failed);
   }
 }

@@ -96,7 +96,7 @@ class _BulkUploadScreenState extends State<BulkUploadScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Processed ${_rowCount} items: ${report.added} added, ${report.updated} updated.'),
+            content: Text('Processed ${_rowCount} items: ${report.added} added, ${report.skipped} skipped.'),
             backgroundColor: const Color(0xff15803D),
           ),
         );
@@ -435,7 +435,7 @@ class _InstructionsCard extends StatelessWidget {
             'Microcontroller, Sensors, Communication Modules, Displays and Indicators, '
             'Actuators and Motors, Power Components, Others\n\n'
             'Behavior:\n'
-            'If a skuid already exists in that category, its stock/boxno will be updated. '
+            'If a skuid already exists in that category, it will be skipped to prevent overwriting existing data. '
             'If it is a new SKU, a new hardware record is created.',
             style: GoogleFonts.lato(fontSize: 12.5, color: secondaryText, height: 1.55),
           ),
@@ -489,6 +489,14 @@ class _ReportCard extends StatelessWidget {
           children: [
             Expanded(
               child: _CountPill(
+                label: 'Processed',
+                count: report.totalProcessed,
+                color: isDark ? const Color(0xff38BDF8) : const Color(0xff0284C7),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _CountPill(
                 label: 'Added',
                 count: report.added,
                 color: isDark ? const Color(0xff4ADE80) : const Color(0xff16A34A),
@@ -497,9 +505,9 @@ class _ReportCard extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: _CountPill(
-                label: 'Updated',
-                count: report.updated,
-                color: isDark ? const Color(0xff38BDF8) : const Color(0xff0284C7),
+                label: 'Skipped',
+                count: report.skipped,
+                color: isDark ? const Color(0xff94A3B8) : const Color(0xff64748B),
               ),
             ),
             const SizedBox(width: 10),

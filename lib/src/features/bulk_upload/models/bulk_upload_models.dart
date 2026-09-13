@@ -12,14 +12,14 @@ class BulkUploadRowResult {
 
 class BulkUploadReport {
   final int added;
-  final int updated;
+  final int skipped;
   final List<BulkUploadRowResult> failed;
 
   BulkUploadReport({
     required this.added,
-    required this.updated,
+    required this.skipped,
     required this.failed,
   });
 
-  int get totalProcessed => added + updated;
+  int get totalProcessed => added + skipped;
 }

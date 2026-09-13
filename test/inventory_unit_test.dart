@@ -3,8 +3,29 @@ import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/data/model.dart';
 import 'package:inventory/src/features/authentication/controllers/emailcontroller.dart';
 import 'package:inventory/src/features/main_app/fines/models/fine_model.dart';
+import 'package:inventory/src/features/bulk_upload/services/bulk_upload_service.dart';
 
 void main() {
+  group('BulkUploadService Unit Tests', () {
+    test('Category routing resolves exact CSV category strings to expected Supabase tables', () {
+      final mappings = {
+        'ACTUATORS AND MOTORS': 'Actuators and Motors',
+        'SENSORS': 'Sensors',
+        'MICROCONTROLLER': 'Microcontroller',
+        'DISPLAYS AND INDICATORS': 'Displays and Indicators',
+        'MECHANICAL & HARDWARE': 'Others',
+        'COMMUNICATION & INPUT MODULES': 'Communication Modules',
+        'POWER COMPONENTS': 'Power Components',
+        'TOOLS AND EQUIPMENT': 'Others',
+      };
+
+      for (final entry in mappings.entries) {
+        final result = BulkUploadService.resolveCategoryForTest(entry.key);
+        expect(result, equals(entry.value), reason: 'Category "${entry.key}" should route to "${entry.value}"');
+      }
+    });
+  });
+
   group('FineModel Unit Tests', () {
     test('FineModel.fromJson creates accurate model with default and enriched fields', () {
       final json = {
