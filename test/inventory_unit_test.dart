@@ -2,12 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/data/model.dart';
 import 'package:inventory/src/features/authentication/controllers/emailcontroller.dart';
+import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/main_app/fines/models/fine_model.dart';
 import 'package:inventory/src/features/bulk_upload/services/bulk_upload_service.dart';
+import 'package:inventory/src/utils/barcode_util.dart';
 
 void main() {
   group('BulkUploadService Unit Tests', () {
-    test('Category routing resolves exact CSV category strings to expected Supabase tables', () {
+    test(
+        'Category routing resolves exact CSV category strings to expected Supabase tables',
+        () {
       final mappings = {
         'ACTUATORS AND MOTORS': 'Actuators and Motors',
         'SENSORS': 'Sensors',
@@ -21,13 +25,16 @@ void main() {
 
       for (final entry in mappings.entries) {
         final result = BulkUploadService.resolveCategoryForTest(entry.key);
-        expect(result, equals(entry.value), reason: 'Category "${entry.key}" should route to "${entry.value}"');
+        expect(result, equals(entry.value),
+            reason: 'Category "${entry.key}" should route to "${entry.value}"');
       }
     });
   });
 
   group('FineModel Unit Tests', () {
-    test('FineModel.fromJson creates accurate model with default and enriched fields', () {
+    test(
+        'FineModel.fromJson creates accurate model with default and enriched fields',
+        () {
       final json = {
         'fine_id': 'fine_123',
         'member_id': 'D2024_01',
@@ -82,7 +89,8 @@ void main() {
       expect(pendingFine.isDue, isTrue);
     });
 
-    test('FineModel copyWith preserves unmodified fields and updates targets', () {
+    test('FineModel copyWith preserves unmodified fields and updates targets',
+        () {
       final fine = FineModel(
         fineId: 'f100',
         memberId: 'm100',
@@ -143,10 +151,32 @@ void main() {
       expect(comp.skuId, 'AM01-05');
       expect(comp.warning, 1);
     });
+
+    test(
+        'scanned SKU normalization trims scanner suffixes and canonicalizes case',
+        () {
+      expect(
+        ComponentController.normalizeScannedIdentifier('  am01-05\r\n'),
+        'AM01-05',
+      );
+    });
+
+    test('Code 128 uses the valid checksum pattern for codeword 95', () {
+      final barcode = BarcodeUtil.encodeToBinary('~');
+      final stopIndex = barcode.lastIndexOf('1100011101011');
+
+      expect(stopIndex, greaterThan(0));
+      expect(
+        barcode.substring(stopIndex - 11, stopIndex),
+        '10111101000',
+      );
+    });
   });
 
   group('Emailcontroller Unit Tests', () {
-    test('formatNameFromEmail parses student and faculty email formats correctly', () {
+    test(
+        'formatNameFromEmail parses student and faculty email formats correctly',
+        () {
       expect(
         Emailcontroller.formatNameFromEmail('2024.tanvi.jagade@ves.ac.in'),
         'Tanvi Jagade',

@@ -5,6 +5,8 @@ import 'package:inventory/src/common_widgets/sidebar_screens/fine_policy_screen.
 import 'package:inventory/src/common_widgets/sidebar_screens/guidelines_screen.dart';
 import 'package:inventory/src/features/analytics/analytics_screen.dart';
 import 'package:inventory/src/features/bulk_upload/bulk_upload_screen.dart';
+import 'package:inventory/src/features/logistics/component_issue_bookings_screen.dart';
+import 'package:inventory/src/features/logistics/print_queue_management_screen.dart';
 import 'package:inventory/src/features/main_app/menu_screen/menu_Screen.dart';
 import 'package:inventory/src/features/main_app/search_screen/member_search_screen.dart';
 import 'package:inventory/src/utils/theme/theme.dart';
@@ -17,10 +19,14 @@ class CustomSideDrawer extends StatelessWidget {
     final isDark = CAppTheme.isDark(context);
 
     final drawerBg = isDark ? const Color(0xff0F172A) : const Color(0xffF8FAFC);
-    final tileTextColor = isDark ? const Color(0xffF1F5F9) : const Color(0xff1E293B);
-    final iconColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
-    final sectionHeaderColor = isDark ? const Color(0xff94A3B8) : const Color(0xff64748B);
-    final dividerColor = isDark ? const Color(0xff1E293B) : const Color(0xffE2E8F0);
+    final tileTextColor =
+        isDark ? const Color(0xffF1F5F9) : const Color(0xff1E293B);
+    final iconColor =
+        isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+    final sectionHeaderColor =
+        isDark ? const Color(0xff94A3B8) : const Color(0xff64748B);
+    final dividerColor =
+        isDark ? const Color(0xff1E293B) : const Color(0xffE2E8F0);
 
     return Drawer(
       backgroundColor: drawerBg,
@@ -116,7 +122,8 @@ class CustomSideDrawer extends StatelessWidget {
             textColor: tileTextColor,
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const MemberSearchScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const MemberSearchScreen()),
               );
             },
           ),
@@ -128,7 +135,8 @@ class CustomSideDrawer extends StatelessWidget {
             textColor: tileTextColor,
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const AnalyticsScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const AnalyticsScreen()),
               );
             },
           ),
@@ -155,7 +163,36 @@ class CustomSideDrawer extends StatelessWidget {
             textColor: tileTextColor,
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const BulkUploadScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const BulkUploadScreen()),
+              );
+            },
+          ),
+          _buildDrawerTile(
+            context: context,
+            icon: Icons.event_available_outlined,
+            title: 'Component Issue Bookings',
+            iconColor: iconColor,
+            textColor: tileTextColor,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ComponentIssueBookingsScreen(),
+                ),
+              );
+            },
+          ),
+          _buildDrawerTile(
+            context: context,
+            icon: Icons.view_in_ar_outlined,
+            title: '3D Printing Queue',
+            iconColor: iconColor,
+            textColor: tileTextColor,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const PrintQueueManagementScreen(),
+                ),
               );
             },
           ),
@@ -182,7 +219,8 @@ class CustomSideDrawer extends StatelessWidget {
             textColor: tileTextColor,
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const GuidelinesScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const GuidelinesScreen()),
               );
             },
           ),

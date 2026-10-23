@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
+import 'package:inventory/src/utils/inventory_barcode_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,6 +24,8 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
   final supabase = Supabase.instance.client;
   final TextEditingController boxnocontroller = TextEditingController();
   final TextEditingController stockcontroller = TextEditingController();
+  final InventoryBarcodeScanner _scanner =
+      InventoryBarcodeScanner('add consumable');
   bool _isProcessingScan = false; // prevents duplicate onDetect firings
   Future<void> _startBarcodeScan() async {
     try {
@@ -51,7 +56,8 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
 
       final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-      showDialog(
+      _scanner.setScannerVisible(true);
+      await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (context) => Dialog(
@@ -102,11 +108,16 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
                   child: Stack(
                     children: [
                       MobileScanner(
+                        controller: _scanner.controller,
+                        errorBuilder: _scanner.buildError,
                         onDetect: (capture) async {
+                          if (_isProcessingScan) return;
+                          _scanner.logCapture(capture);
                           final List<Barcode> barcodes = capture.barcodes;
                           if (barcodes.isNotEmpty) {
                             final String? code = barcodes.first.rawValue;
                             if (code != null && code.isNotEmpty) {
+                              _isProcessingScan = true;
                               print('DEBUG: Barcode detected: $code');
                               // Add haptic feedback
                               HapticFeedback.mediumImpact();
@@ -114,6 +125,7 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
                               Navigator.pop(context);
                               // Process barcode after scanner is closed
                               await _processBarcode(code);
+                              _isProcessingScan = false;
                             }
                           }
                         },
@@ -193,23 +205,51 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? Theme.of(context).colorScheme.surfaceVariant : Colors.grey[100],
+                    color: isDarkMode
+                        ? Theme.of(context).colorScheme.surfaceVariant
+                        : Colors.grey[100],
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(20),
                       bottomRight: Radius.circular(20),
                     ),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.info_outline, color: Color(0xff19335A)),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Position the barcode within the frame',
-                        style: GoogleFonts.lato(
-                          textStyle: TextStyle(
-                            color: isDarkMode ? Colors.white70 : const Color(0xff19335A),
-                            fontSize: 14,
+                      Flexible(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline,
+                                color: Color(0xff19335A)),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Position the barcode within the frame',
+                                style: GoogleFonts.lato(
+                                  textStyle: TextStyle(
+                                    color: isDarkMode
+                                        ? Colors.white70
+                                        : const Color(0xff19335A),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Toggle flashlight',
+                        onPressed: _scanner.controller.toggleTorch,
+                        icon: ValueListenableBuilder(
+                          valueListenable: _scanner.controller,
+                          builder: (context, state, child) => Icon(
+                            state.torchState == TorchState.on
+                                ? Icons.flash_on
+                                : Icons.flash_off,
+                            color: isDarkMode
+                                ? Colors.white
+                                : const Color(0xff19335A),
                           ),
                         ),
                       ),
@@ -221,7 +261,9 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
           ),
         ),
       );
+      _scanner.setScannerVisible(false);
     } catch (e) {
+      _scanner.setScannerVisible(false);
       print('DEBUG: Error in scanner: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,19 +284,28 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
       if (!mounted) return;
 
       // Update the barcode controller
+      final normalizedScan =
+          ComponentController.normalizeScannedIdentifier(scanResult);
       setState(() {
-        barcodecontroller.text = scanResult;
+        barcodecontroller.text = normalizedScan;
       });
 
       // Analyze the SKU ID
-      componentcontroller.skuidanalyze(scanResult);
+      _scanner.logLookup(normalizedScan);
+      await componentcontroller.skuidanalyze(normalizedScan);
 
       if (mounted) {
+        final recognized = componentcontroller.CompName.value.isNotEmpty &&
+            !componentcontroller.CompName.value.startsWith('Unknown ');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Barcode scanned successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(
+              recognized
+                  ? 'Barcode scanned successfully'
+                  : 'Barcode scanned, but component not recognized',
+            ),
+            backgroundColor: recognized ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -271,6 +322,8 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
           ),
         );
       }
+    } finally {
+      _isProcessingScan = false;
     }
   }
 
@@ -279,7 +332,8 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
         child: Column(
           children: [
@@ -317,21 +371,27 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
               padding: const EdgeInsets.all(25.0),
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: isDarkMode ? Colors.white54 : const Color.fromARGB(255, 4, 13, 56)),
+                  border: Border.all(
+                      color: isDarkMode
+                          ? Colors.white54
+                          : const Color.fromARGB(255, 4, 13, 56)),
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
                 child: TextField(
                   controller: componentcontroller.namecontroller,
                   maxLines: 6,
                   minLines: 1,
-                  style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+                  style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black),
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
                     label: Text(
                       "Name",
                       style: GoogleFonts.lato(
                         textStyle: TextStyle(
-                            color: isDarkMode ? Colors.white70 : const Color.fromARGB(255, 6, 6, 6)),
+                            color: isDarkMode
+                                ? Colors.white70
+                                : const Color.fromARGB(255, 6, 6, 6)),
                       ),
                     ),
                   ),
@@ -339,122 +399,144 @@ class _NewConsumableentryState extends State<NewConsumableentry> {
               ),
             ),
             Row(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 25.0, top: 25.0, bottom: 25.0, right: 12.5),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: isDarkMode ? Colors.white54 : const Color.fromARGB(255, 4, 13, 56)),
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  ),
-                  child: TextFormField(
-                    controller: componentcontroller.boxnocontroller,
-                    maxLines: 6,
-                    minLines: 1,
-                    style: TextStyle(color: isDarkMode ? Colors.white : const Color.fromARGB(255, 0, 0, 0)),
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      label: Text(
-                        "Box No.",
-                        style: GoogleFonts.lato(
-                          textStyle: TextStyle(
-                              color: isDarkMode ? Colors.white70 : const Color.fromARGB(255, 6, 6, 6)),
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                        left: 25.0, top: 25.0, bottom: 25.0, right: 12.5),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                            color: isDarkMode
+                                ? Colors.white54
+                                : const Color.fromARGB(255, 4, 13, 56)),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(8)),
+                      ),
+                      child: TextFormField(
+                        controller: componentcontroller.boxnocontroller,
+                        maxLines: 6,
+                        minLines: 1,
+                        style: TextStyle(
+                            color: isDarkMode
+                                ? Colors.white
+                                : const Color.fromARGB(255, 0, 0, 0)),
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          label: Text(
+                            "Box No.",
+                            style: GoogleFonts.lato(
+                              textStyle: TextStyle(
+                                  color: isDarkMode
+                                      ? Colors.white70
+                                      : const Color.fromARGB(255, 6, 6, 6)),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 25.0, top: 25.0, bottom: 25.0, left: 12.5),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: isDarkMode ? Colors.white54 : const Color.fromARGB(255, 4, 13, 56)),
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  ),
-                  child: TextFormField(
-                    controller: stockcontroller,
-                    maxLines: 6,
-                    minLines: 1,
-                    style: TextStyle(color: isDarkMode ? Colors.white : const Color.fromARGB(255, 0, 0, 0)),
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      label: Text(
-                        "Stock",
-                        style: GoogleFonts.lato(
-                          textStyle: TextStyle(
-                              color: isDarkMode ? Colors.white70 : const Color.fromARGB(255, 6, 6, 6)),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                        right: 25.0, top: 25.0, bottom: 25.0, left: 12.5),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                            color: isDarkMode
+                                ? Colors.white54
+                                : const Color.fromARGB(255, 4, 13, 56)),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(8)),
+                      ),
+                      child: TextFormField(
+                        controller: stockcontroller,
+                        maxLines: 6,
+                        minLines: 1,
+                        style: TextStyle(
+                            color: isDarkMode
+                                ? Colors.white
+                                : const Color.fromARGB(255, 0, 0, 0)),
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          label: Text(
+                            "Stock",
+                            style: GoogleFonts.lato(
+                              textStyle: TextStyle(
+                                  color: isDarkMode
+                                      ? Colors.white70
+                                      : const Color.fromARGB(255, 6, 6, 6)),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 40),
-        TextButton(
-          onPressed: () async {
-            try {
-              await supabase.from(componentcontroller.ClassName.value).insert({
-                'skuid': barcodecontroller.text,
-                'stock': stockcontroller.text,
-                'name': componentcontroller.CompName.value,
-                'boxno': componentcontroller.boxnocontroller.text
-              });
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Component added successfully'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-
-              Navigator.pop(context);
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Error adding component: $e'),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
-          },
-          child: Container(
-            width: 300,
-            decoration: const BoxDecoration(
-              color: Color(0xff19335A),
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
                 ),
               ],
             ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            alignment: Alignment.center,
-            child: Text(
-              'Add Component',
-              style: GoogleFonts.lato(
-                textStyle: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
+            const SizedBox(height: 40),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await supabase
+                      .from(componentcontroller.ClassName.value)
+                      .insert({
+                    'skuid': barcodecontroller.text,
+                    'stock': stockcontroller.text,
+                    'name': componentcontroller.CompName.value,
+                    'boxno': componentcontroller.boxnocontroller.text
+                  });
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Component added successfully'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+
+                  Navigator.pop(context);
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error adding component: $e'),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              child: Container(
+                width: 300,
+                decoration: const BoxDecoration(
+                  color: Color(0xff19335A),
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                alignment: Alignment.center,
+                child: Text(
+                  'Add Component',
+                  style: GoogleFonts.lato(
+                    textStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
           ],
         ),
       ),

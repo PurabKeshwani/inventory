@@ -341,7 +341,7 @@ class ComponentController extends GetxController {
       final response = await Supabase.instance.client
           .from(tableName)
           .select('skuid, name, boxno, stock, warning')
-          .eq('skuid', skuId)
+          .ilike('skuid', skuId)
           .maybeSingle();
 
       if (response != null) {
@@ -431,7 +431,15 @@ class ComponentController extends GetxController {
   }
 
   // Main SKU analysis method - now completely database-driven
+  static String normalizeScannedIdentifier(String value) {
+    // Camera decoders/scanner wedges may append a line terminator. Keep all
+    // identifier punctuation, while normalizing SKU casing for lookup.
+    return value.replaceFirst(RegExp(r'[\r\n\t]+$'), '').trim().toUpperCase();
+  }
+
   Future<void> skuidanalyze(String elem) async {
+    elem = normalizeScannedIdentifier(elem);
+    if (elem.isEmpty) return;
     print('Analyzing SKUID: $elem');
 
     // Microcontrollers (MC)
@@ -664,8 +672,9 @@ class ComponentController extends GetxController {
       Quantity.value = 0;
     }
 
-    // Actuators and Motors (AC)
-    else if (RegExp(r'^AC').hasMatch(elem)) {
+    // Actuators and Motors: AC is the legacy prefix; AM is also used for
+    // actuator/motor inventory identifiers.
+    else if (RegExp(r'^(?:AC|AM)', caseSensitive: false).hasMatch(elem)) {
       ClassName.value = 'Actuators and Motors';
       print('ClassName set to: ${ClassName.value}');
 

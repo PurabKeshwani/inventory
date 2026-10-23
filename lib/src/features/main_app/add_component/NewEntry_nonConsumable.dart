@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
+import 'package:inventory/src/utils/inventory_barcode_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -22,6 +25,8 @@ class _NewentryState extends State<Newentry> {
   final supabase = Supabase.instance.client;
   final TextEditingController boxnocontroller = TextEditingController();
   final TextEditingController stockcontroller = TextEditingController();
+  final InventoryBarcodeScanner _scanner =
+      InventoryBarcodeScanner('add component');
   bool _isLoading = false;
   bool _isProcessingScan = false; // prevents duplicate onDetect firings
   @override
@@ -45,6 +50,7 @@ class _NewentryState extends State<Newentry> {
   void dispose() {
     barcodecontroller.dispose();
     stockcontroller.dispose();
+    unawaited(_scanner.dispose());
     super.dispose();
   }
 
@@ -71,13 +77,14 @@ class _NewentryState extends State<Newentry> {
 
       print('DEBUG: Camera permission granted, starting scan');
 
-       if (!mounted) return;
+      if (!mounted) return;
 
       _isProcessingScan = false; // reset guard for this new scan attempt
 
       final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-      showDialog(
+      _scanner.setScannerVisible(true);
+      await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (context) => Dialog(
@@ -127,9 +134,12 @@ class _NewentryState extends State<Newentry> {
                 Expanded(
                   child: Stack(
                     children: [
-                       MobileScanner(
+                      MobileScanner(
+                        controller: _scanner.controller,
+                        errorBuilder: _scanner.buildError,
                         onDetect: (capture) async {
                           if (_isProcessingScan) return;
+                          _scanner.logCapture(capture);
                           final List<Barcode> barcodes = capture.barcodes;
                           if (barcodes.isNotEmpty) {
                             final String? code = barcodes.first.rawValue;
@@ -218,12 +228,30 @@ class _NewentryState extends State<Newentry> {
                   ),
                 ),
                 // Footer
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: IconButton(
+                    tooltip: 'Toggle flashlight',
+                    onPressed: _scanner.controller.toggleTorch,
+                    icon: ValueListenableBuilder(
+                      valueListenable: _scanner.controller,
+                      builder: (context, state, child) => Icon(
+                        state.torchState == TorchState.on
+                            ? Icons.flash_on
+                            : Icons.flash_off,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       );
+      _scanner.setScannerVisible(false);
     } catch (e) {
+      _scanner.setScannerVisible(false);
       print('DEBUG: Error in scanner: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -274,7 +302,11 @@ class _NewentryState extends State<Newentry> {
       }
 
       // Use async version to ensure component data is loaded
-      await componentcontroller.skuidanalyze(scanResult);
+      final normalizedScan =
+          ComponentController.normalizeScannedIdentifier(scanResult);
+      barcodecontroller.text = normalizedScan;
+      _scanner.logLookup(normalizedScan);
+      await componentcontroller.skuidanalyze(normalizedScan);
 
       // Update stock controller with the quantity from database if available
       if (componentcontroller.Quantity.value > 0) {
@@ -453,222 +485,247 @@ class _NewentryState extends State<Newentry> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? Theme.of(context).colorScheme.surface : const Color.fromARGB(255, 191, 230, 249),
+      backgroundColor: isDarkMode
+          ? Theme.of(context).colorScheme.surface
+          : const Color.fromARGB(255, 191, 230, 249),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Form(
-          key: _formKey,
-          child: Column(children: [
-            const SizedBox(height: 40),
-            TextButton(
-              onPressed: _startBarcodeScan,
-              child: Container(
-                width: 300,
-                decoration: const BoxDecoration(
-                  color: Color(0xff19335A),
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                alignment: Alignment.center,
-                child: Text(
-                  'Scan the Barcode',
-                  style: GoogleFonts.lato(
-                    textStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                    ),
+            key: _formKey,
+            child: Column(children: [
+              const SizedBox(height: 40),
+              TextButton(
+                onPressed: _startBarcodeScan,
+                child: Container(
+                  width: 300,
+                  decoration: const BoxDecoration(
+                    color: Color(0xff19335A),
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
                   ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(25.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: isDarkMode ? Colors.white54 : const Color.fromARGB(255, 4, 13, 56)),
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                ),
-                child: TextFormField(
-                  controller: barcodecontroller,
-                  maxLines: 6,
-                  minLines: 1,
-                  style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    label: Text(
-                      "SKU ID",
-                      style: GoogleFonts.lato(
-                        textStyle: const TextStyle(
-                            color: Color.fromARGB(255, 136, 136, 136)),
-                      ),
-                    ),
-                    suffixIcon: barcodecontroller.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              barcodecontroller.clear();
-                              componentcontroller.reset();
-                              stockcontroller.clear();
-                            },
-                          )
-                        : null,
-                    helperText: "Scan barcode or enter SKU ID manually",
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter or scan a SKU ID';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    setState(
-                        () {}); // Trigger rebuild to show/hide clear button
-                  },
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(25.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: isDarkMode ? Colors.white54 : const Color.fromARGB(255, 4, 13, 56)),
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                ),
-                child: TextField(
-                  controller: componentcontroller.namecontroller,
-                  maxLines: 6,
-                  minLines: 1,
-                  style: TextStyle(color: isDarkMode ? Colors.white : const Color.fromARGB(255, 5, 5, 5)),
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    label: Text(
-                      "Name",
-                      style: GoogleFonts.lato(
-                        textStyle: const TextStyle(
-                            color: Color.fromARGB(255, 129, 128, 128)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Scan the Barcode',
+                    style: GoogleFonts.lato(
+                      textStyle: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(25.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: isDarkMode ? Colors.white54 : const Color.fromARGB(255, 4, 13, 56)),
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                ),
-                child: TextFormField(
-                  controller: componentcontroller.boxnocontroller,
-                  maxLines: 6,
-                  minLines: 1,
-                  style: TextStyle(color: isDarkMode ? Colors.white : const Color.fromARGB(255, 4, 13, 56)),
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    label: Text(
-                      "Box No.",
-                      style: GoogleFonts.lato(
-                        textStyle: const TextStyle(
-                            color: Color.fromARGB(255, 129, 128, 128)),
-                      ),
-                    ),
+              Padding(
+                padding: const EdgeInsets.all(25.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: isDarkMode
+                            ? Colors.white54
+                            : const Color.fromARGB(255, 4, 13, 56)),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
                   ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(25.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: isDarkMode ? Colors.white54 : const Color.fromARGB(255, 4, 13, 56)),
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                ),
-                child: TextFormField(
-                  controller: stockcontroller,
-                  maxLines: 6,
-                  minLines: 1,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
-                  style: TextStyle(color: isDarkMode ? Colors.white : const Color.fromARGB(255, 4, 13, 56)),
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    label: Text(
-                      "Stock",
-                      style: GoogleFonts.lato(
-                        textStyle: const TextStyle(
-                            color: Color.fromARGB(255, 129, 128, 128)),
-                      ),
-                    ),
-                    helperText: "Enter the number of items in stock",
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter stock quantity';
-                    }
-                    final stock = int.tryParse(value);
-                    if (stock == null || stock < 0) {
-                      return 'Please enter a valid positive number';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: _isLoading ? null : _addComponent,
-              child: Container(
-                width: 300,
-                decoration: BoxDecoration(
-                  color: _isLoading ? Colors.grey : const Color(0xff19335A),
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                alignment: Alignment.center,
-                child: _isLoading
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Adding...',
-                            style: GoogleFonts.lato(
-                              textStyle: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Text(
-                        'Add Component',
+                  child: TextFormField(
+                    controller: barcodecontroller,
+                    maxLines: 6,
+                    minLines: 1,
+                    style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black),
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      label: Text(
+                        "SKU ID",
                         style: GoogleFonts.lato(
                           textStyle: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18,
-                          ),
+                              color: Color.fromARGB(255, 136, 136, 136)),
                         ),
                       ),
+                      suffixIcon: barcodecontroller.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                barcodecontroller.clear();
+                                componentcontroller.reset();
+                                stockcontroller.clear();
+                              },
+                            )
+                          : null,
+                      helperText: "Scan barcode or enter SKU ID manually",
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter or scan a SKU ID';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      setState(
+                          () {}); // Trigger rebuild to show/hide clear button
+                    },
+                  ),
+                ),
               ),
-            ),
-          ]),
-        ),
+              Padding(
+                padding: const EdgeInsets.all(25.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: isDarkMode
+                            ? Colors.white54
+                            : const Color.fromARGB(255, 4, 13, 56)),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  ),
+                  child: TextField(
+                    controller: componentcontroller.namecontroller,
+                    maxLines: 6,
+                    minLines: 1,
+                    style: TextStyle(
+                        color: isDarkMode
+                            ? Colors.white
+                            : const Color.fromARGB(255, 5, 5, 5)),
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      label: Text(
+                        "Name",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                              color: Color.fromARGB(255, 129, 128, 128)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(25.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: isDarkMode
+                            ? Colors.white54
+                            : const Color.fromARGB(255, 4, 13, 56)),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  ),
+                  child: TextFormField(
+                    controller: componentcontroller.boxnocontroller,
+                    maxLines: 6,
+                    minLines: 1,
+                    style: TextStyle(
+                        color: isDarkMode
+                            ? Colors.white
+                            : const Color.fromARGB(255, 4, 13, 56)),
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      label: Text(
+                        "Box No.",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                              color: Color.fromARGB(255, 129, 128, 128)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(25.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: isDarkMode
+                            ? Colors.white54
+                            : const Color.fromARGB(255, 4, 13, 56)),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  ),
+                  child: TextFormField(
+                    controller: stockcontroller,
+                    maxLines: 6,
+                    minLines: 1,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    style: TextStyle(
+                        color: isDarkMode
+                            ? Colors.white
+                            : const Color.fromARGB(255, 4, 13, 56)),
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      label: Text(
+                        "Stock",
+                        style: GoogleFonts.lato(
+                          textStyle: const TextStyle(
+                              color: Color.fromARGB(255, 129, 128, 128)),
+                        ),
+                      ),
+                      helperText: "Enter the number of items in stock",
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter stock quantity';
+                      }
+                      final stock = int.tryParse(value);
+                      if (stock == null || stock < 0) {
+                        return 'Please enter a valid positive number';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: _isLoading ? null : _addComponent,
+                child: Container(
+                  width: 300,
+                  decoration: BoxDecoration(
+                    color: _isLoading ? Colors.grey : const Color(0xff19335A),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  alignment: Alignment.center,
+                  child: _isLoading
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Adding...',
+                              style: GoogleFonts.lato(
+                                textStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          'Add Component',
+                          style: GoogleFonts.lato(
+                            textStyle: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+            ]),
+          ),
         ),
       ),
     );

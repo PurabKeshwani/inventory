@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,7 @@ import 'package:inventory/src/features/authentication/controllers/componentContr
 import 'package:inventory/src/features/main_app/components_in_class_screen/component_in_class_screen.dart';
 import 'package:inventory/src/features/main_app/dashboard/classes_widget.dart';
 import 'package:inventory/src/utils/theme/theme.dart';
+import 'package:inventory/src/utils/inventory_barcode_scanner.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -21,7 +23,8 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   final supabase = Supabase.instance.client;
-  final MobileScannerController _scannerController = MobileScannerController();
+  final InventoryBarcodeScanner _scanner =
+      InventoryBarcodeScanner('identify and quick scan');
 
   final List<String> _categoryTables = [
     'Microcontroller',
@@ -35,23 +38,26 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   void dispose() {
-    _scannerController.dispose();
+    unawaited(_scanner.dispose());
     super.dispose();
   }
 
   void _openBarcodeIdentifier() {
-    showDialog(
+    _scanner.setScannerVisible(true);
+    unawaited(showDialog<void>(
       context: context,
       builder: (dialogContext) {
         final isDark = CAppTheme.isDark(context);
         final primaryText = CAppTheme.primaryTextColor(context);
-        final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+        final accentColor =
+            isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
 
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xff0F172A) : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: isDark ? const Color(0xff334155) : Colors.transparent),
+            side: BorderSide(
+                color: isDark ? const Color(0xff334155) : Colors.transparent),
           ),
           titlePadding: const EdgeInsets.fromLTRB(20, 18, 12, 10),
           title: Row(
@@ -59,7 +65,8 @@ class _DashboardState extends State<Dashboard> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.qr_code_scanner_rounded, color: accentColor, size: 22),
+                  Icon(Icons.qr_code_scanner_rounded,
+                      color: accentColor, size: 22),
                   const SizedBox(width: 8),
                   Text(
                     'Identify Component',
@@ -77,7 +84,8 @@ class _DashboardState extends State<Dashboard> {
               ),
             ],
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -98,12 +106,15 @@ class _DashboardState extends State<Dashboard> {
                     alignment: Alignment.center,
                     children: [
                       MobileScanner(
-                        controller: _scannerController,
+                        controller: _scanner.controller,
+                        errorBuilder: _scanner.buildError,
                         onDetect: (capture) {
+                          _scanner.logCapture(capture);
                           final List<Barcode> barcodes = capture.barcodes;
                           for (final barcode in barcodes) {
-                            if (barcode.rawValue != null && barcode.rawValue!.isNotEmpty) {
-                              _scannerController.stop();
+                            if (barcode.rawValue != null &&
+                                barcode.rawValue!.isNotEmpty) {
+                              unawaited(_scanner.controller.stop());
                               Navigator.pop(dialogContext);
                               _handleIdentifiedCode(barcode.rawValue!);
                               break;
@@ -133,15 +144,17 @@ class _DashboardState extends State<Dashboard> {
                 children: [
                   IconButton(
                     icon: ValueListenableBuilder(
-                      valueListenable: _scannerController,
+                      valueListenable: _scanner.controller,
                       builder: (context, state, child) {
                         return Icon(
-                          state.torchState == TorchState.on ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                          state.torchState == TorchState.on
+                              ? Icons.flash_on_rounded
+                              : Icons.flash_off_rounded,
                           color: accentColor,
                         );
                       },
                     ),
-                    onPressed: () => _scannerController.toggleTorch(),
+                    onPressed: () => _scanner.controller.toggleTorch(),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -149,7 +162,8 @@ class _DashboardState extends State<Dashboard> {
                     style: GoogleFonts.lato(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xff94A3B8) : Colors.grey[700],
+                      color:
+                          isDark ? const Color(0xff94A3B8) : Colors.grey[700],
                     ),
                   ),
                 ],
@@ -158,7 +172,7 @@ class _DashboardState extends State<Dashboard> {
           ),
         );
       },
-    );
+    ).whenComplete(() => _scanner.setScannerVisible(false)));
   }
 
   Future<void> _handleIdentifiedCode(String rawCode) async {
@@ -170,7 +184,9 @@ class _DashboardState extends State<Dashboard> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: CAppTheme.isDark(context) ? const Color(0xff1E293B) : Colors.white,
+            color: CAppTheme.isDark(context)
+                ? const Color(0xff1E293B)
+                : Colors.white,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -192,13 +208,17 @@ class _DashboardState extends State<Dashboard> {
       ),
     );
 
-    String targetSku = rawCode.trim();
+    String targetSku = ComponentController.normalizeScannedIdentifier(rawCode);
+    _scanner.logLookup(targetSku);
 
     // Check if JSON
     try {
       final decoded = jsonDecode(rawCode);
       if (decoded is Map<String, dynamic>) {
-        targetSku = (decoded['skuid'] ?? decoded['sku'] ?? decoded['name'] ?? rawCode).toString().trim();
+        targetSku = ComponentController.normalizeScannedIdentifier(
+          (decoded['skuid'] ?? decoded['sku'] ?? decoded['name'] ?? rawCode)
+              .toString(),
+        );
       }
     } catch (_) {}
 
@@ -207,16 +227,35 @@ class _DashboardState extends State<Dashboard> {
 
     // Search across categories in Supabase
     try {
+      // Prefer an exact identifier match across all inventory categories.
       for (final category in _categoryTables) {
         final response = await supabase
             .from(category)
             .select()
-            .or('skuid.eq.$targetSku,compname.ilike.%$targetSku%');
+            .ilike('skuid', targetSku)
+            .limit(1);
 
         if (response.isNotEmpty) {
           foundComponent = response.first;
           foundCategory = category;
           break;
+        }
+      }
+
+      // Keep the existing component-name search for users who scan a name.
+      if (foundComponent == null) {
+        for (final category in _categoryTables) {
+          final response = await supabase
+              .from(category)
+              .select()
+              .ilike('name', '%$targetSku%')
+              .limit(1);
+
+          if (response.isNotEmpty) {
+            foundComponent = response.first;
+            foundCategory = category;
+            break;
+          }
         }
       }
 
@@ -238,7 +277,15 @@ class _DashboardState extends State<Dashboard> {
           }
         }
       }
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      debugPrint('Barcode lookup failed: ${error.runtimeType}: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading
+        _showLookupErrorDialog();
+      }
+      return;
+    }
 
     if (mounted) {
       Navigator.pop(context); // Dismiss loading
@@ -251,16 +298,39 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  void _showComponentDetailsModal(Map<String, dynamic> data, String category, String scannedSku) {
+  void _showLookupErrorDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Lookup unavailable'),
+        content: const Text(
+          'The inventory could not be checked right now. Please try again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showComponentDetailsModal(
+      Map<String, dynamic> data, String category, String scannedSku) {
     final isDark = CAppTheme.isDark(context);
     final primaryText = CAppTheme.primaryTextColor(context);
     final secondaryText = CAppTheme.secondaryTextColor(context);
-    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+    final accentColor =
+        isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
 
-    final compName = (data['compname'] ?? data['name'] ?? 'Unknown Component').toString();
+    final compName =
+        (data['compname'] ?? data['name'] ?? 'Unknown Component').toString();
     final skuId = (data['skuid'] ?? scannedSku).toString();
     final boxNo = (data['boxno'] ?? data['boxNo'] ?? '—').toString();
-    final stock = int.tryParse((data['quantity'] ?? data['stock'] ?? '0').toString()) ?? 0;
+    final stock =
+        int.tryParse((data['quantity'] ?? data['stock'] ?? '0').toString()) ??
+            0;
     final warning = (data['warning'] ?? data['notes'] ?? '').toString();
     final isAvailable = stock > 0;
 
@@ -302,7 +372,8 @@ class _DashboardState extends State<Dashboard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xff38BDF8).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
@@ -313,7 +384,8 @@ class _DashboardState extends State<Dashboard> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xff38BDF8)),
+                        const Icon(Icons.check_circle_rounded,
+                            size: 14, color: Color(0xff38BDF8)),
                         const SizedBox(width: 5),
                         Text(
                           'COMPONENT IDENTIFIED',
@@ -369,16 +441,22 @@ class _DashboardState extends State<Dashboard> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xff1E293B) : const Color(0xffF8FAFC),
+                        color: isDark
+                            ? const Color(0xff1E293B)
+                            : const Color(0xffF8FAFC),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+                          color: isDark
+                              ? const Color(0xff334155)
+                              : const Color(0xffE2EAF4),
                         ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('SKU ID', style: GoogleFonts.lato(fontSize: 11, color: secondaryText)),
+                          Text('SKU ID',
+                              style: GoogleFonts.lato(
+                                  fontSize: 11, color: secondaryText)),
                           const SizedBox(height: 3),
                           Text(
                             skuId,
@@ -399,16 +477,22 @@ class _DashboardState extends State<Dashboard> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xff1E293B) : const Color(0xffF8FAFC),
+                        color: isDark
+                            ? const Color(0xff1E293B)
+                            : const Color(0xffF8FAFC),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isDark ? const Color(0xff334155) : const Color(0xffE2EAF4),
+                          color: isDark
+                              ? const Color(0xff334155)
+                              : const Color(0xffE2EAF4),
                         ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Storage Box', style: GoogleFonts.lato(fontSize: 11, color: secondaryText)),
+                          Text('Storage Box',
+                              style: GoogleFonts.lato(
+                                  fontSize: 11, color: secondaryText)),
                           const SizedBox(height: 3),
                           Text(
                             boxNo,
@@ -431,13 +515,21 @@ class _DashboardState extends State<Dashboard> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: isAvailable
-                      ? (isDark ? Colors.green.withValues(alpha: 0.15) : Colors.green[50])
-                      : (isDark ? Colors.red.withValues(alpha: 0.15) : Colors.red[50]),
+                      ? (isDark
+                          ? Colors.green.withValues(alpha: 0.15)
+                          : Colors.green[50])
+                      : (isDark
+                          ? Colors.red.withValues(alpha: 0.15)
+                          : Colors.red[50]),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isAvailable
-                        ? (isDark ? Colors.green.withValues(alpha: 0.3) : Colors.green)
-                        : (isDark ? Colors.red.withValues(alpha: 0.3) : Colors.red),
+                        ? (isDark
+                            ? Colors.green.withValues(alpha: 0.3)
+                            : Colors.green)
+                        : (isDark
+                            ? Colors.red.withValues(alpha: 0.3)
+                            : Colors.red),
                   ),
                 ),
                 child: Row(
@@ -446,8 +538,14 @@ class _DashboardState extends State<Dashboard> {
                     Row(
                       children: [
                         Icon(
-                          isAvailable ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                          color: isAvailable ? (isDark ? const Color(0xff4ADE80) : Colors.green[700]) : Colors.red,
+                          isAvailable
+                              ? Icons.check_circle_rounded
+                              : Icons.cancel_rounded,
+                          color: isAvailable
+                              ? (isDark
+                                  ? const Color(0xff4ADE80)
+                                  : Colors.green[700])
+                              : Colors.red,
                           size: 20,
                         ),
                         const SizedBox(width: 10),
@@ -455,18 +553,28 @@ class _DashboardState extends State<Dashboard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isAvailable ? 'In Stock & Available' : 'Out of Stock / Issued',
+                              isAvailable
+                                  ? 'In Stock & Available'
+                                  : 'Out of Stock / Issued',
                               style: GoogleFonts.montserrat(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: isAvailable ? (isDark ? const Color(0xff4ADE80) : Colors.green[800]) : Colors.red[800],
+                                color: isAvailable
+                                    ? (isDark
+                                        ? const Color(0xff4ADE80)
+                                        : Colors.green[800])
+                                    : Colors.red[800],
                               ),
                             ),
                             Text(
-                              isAvailable ? '$stock units ready in lab' : 'All units currently issued',
+                              isAvailable
+                                  ? '$stock units ready in lab'
+                                  : 'All units currently issued',
                               style: GoogleFonts.lato(
                                 fontSize: 11.5,
-                                color: isDark ? const Color(0xff94A3B8) : Colors.grey[700],
+                                color: isDark
+                                    ? const Color(0xff94A3B8)
+                                    : Colors.grey[700],
                               ),
                             ),
                           ],
@@ -478,7 +586,11 @@ class _DashboardState extends State<Dashboard> {
                       style: GoogleFonts.montserrat(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: isAvailable ? (isDark ? const Color(0xff4ADE80) : Colors.green[800]) : Colors.red[800],
+                        color: isAvailable
+                            ? (isDark
+                                ? const Color(0xff4ADE80)
+                                : Colors.green[800])
+                            : Colors.red[800],
                       ),
                     ),
                   ],
@@ -488,22 +600,29 @@ class _DashboardState extends State<Dashboard> {
               if (warning.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: isDark ? 0.15 : 0.08),
+                    color:
+                        Colors.orange.withValues(alpha: isDark ? 0.15 : 0.08),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.orange.withValues(alpha: isDark ? 0.3 : 0.2)),
+                    border: Border.all(
+                        color: Colors.orange
+                            .withValues(alpha: isDark ? 0.3 : 0.2)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
+                      const Icon(Icons.warning_amber_rounded,
+                          size: 16, color: Colors.orange),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           warning,
                           style: GoogleFonts.lato(
                             fontSize: 12,
-                            color: isDark ? const Color(0xffFDBA74) : Colors.orange[900],
+                            color: isDark
+                                ? const Color(0xffFDBA74)
+                                : Colors.orange[900],
                           ),
                         ),
                       ),
@@ -526,13 +645,17 @@ class _DashboardState extends State<Dashboard> {
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: accentColor,
-                            foregroundColor: isDark ? const Color(0xff080E1A) : Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            foregroundColor:
+                                isDark ? const Color(0xff080E1A) : Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
                           ),
-                          icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
+                          icon: const Icon(Icons.add_shopping_cart_rounded,
+                              size: 18),
                           label: Text(
                             'Add to Cart',
-                            style: GoogleFonts.montserrat(fontSize: 13.5, fontWeight: FontWeight.bold),
+                            style: GoogleFonts.montserrat(
+                                fontSize: 13.5, fontWeight: FontWeight.bold),
                           ),
                           onPressed: () {
                             Navigator.pop(ctx);
@@ -566,12 +689,15 @@ class _DashboardState extends State<Dashboard> {
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: accentColor),
                           foregroundColor: accentColor,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                        icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                        icon:
+                            const Icon(Icons.qr_code_scanner_rounded, size: 18),
                         label: Text(
                           'Scan Next',
-                          style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.bold),
+                          style: GoogleFonts.montserrat(
+                              fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                         onPressed: () {
                           Navigator.pop(ctx);
@@ -598,11 +724,13 @@ class _DashboardState extends State<Dashboard> {
         backgroundColor: isDark ? const Color(0xff0F172A) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: isDark ? const Color(0xff334155) : Colors.transparent),
+          side: BorderSide(
+              color: isDark ? const Color(0xff334155) : Colors.transparent),
         ),
         title: Row(
           children: [
-            const Icon(Icons.help_outline_rounded, color: Colors.orange, size: 24),
+            const Icon(Icons.help_outline_rounded,
+                color: Colors.orange, size: 24),
             const SizedBox(width: 8),
             Text(
               'Unrecognized Code',
@@ -620,7 +748,8 @@ class _DashboardState extends State<Dashboard> {
           children: [
             Text(
               'No component in the 7 categories matched the scanned code:',
-              style: GoogleFonts.lato(fontSize: 13, color: CAppTheme.secondaryTextColor(context)),
+              style: GoogleFonts.lato(
+                  fontSize: 13, color: CAppTheme.secondaryTextColor(context)),
             ),
             const SizedBox(height: 10),
             Container(
@@ -647,7 +776,8 @@ class _DashboardState extends State<Dashboard> {
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isDark ? const Color(0xff38BDF8) : const Color(0xff19335A),
+              backgroundColor:
+                  isDark ? const Color(0xff38BDF8) : const Color(0xff19335A),
               foregroundColor: isDark ? const Color(0xff080E1A) : Colors.white,
             ),
             icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
@@ -665,7 +795,8 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     final isDark = CAppTheme.isDark(context);
-    final accentColor = isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+    final accentColor =
+        isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -725,13 +856,15 @@ class _DashboardState extends State<Dashboard> {
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: isDark
-                                ? const Color(0xff38BDF8).withValues(alpha: 0.15)
+                                ? const Color(0xff38BDF8)
+                                    .withValues(alpha: 0.15)
                                 : Colors.white.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.inventory_2_rounded,
-                            color: isDark ? const Color(0xff38BDF8) : Colors.white,
+                            color:
+                                isDark ? const Color(0xff38BDF8) : Colors.white,
                             size: 26,
                           ),
                         ),
@@ -752,7 +885,9 @@ class _DashboardState extends State<Dashboard> {
                               Text(
                                 '7 Categories • Live lab components database',
                                 style: GoogleFonts.lato(
-                                  color: isDark ? const Color(0xff94A3B8) : Colors.white70,
+                                  color: isDark
+                                      ? const Color(0xff94A3B8)
+                                      : Colors.white70,
                                   fontSize: 12,
                                 ),
                               ),
@@ -767,7 +902,8 @@ class _DashboardState extends State<Dashboard> {
                       onTap: _openBarcodeIdentifier,
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
                           color: isDark
                               ? const Color(0xff38BDF8).withValues(alpha: 0.15)
@@ -775,7 +911,8 @@ class _DashboardState extends State<Dashboard> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isDark
-                                ? const Color(0xff38BDF8).withValues(alpha: 0.35)
+                                ? const Color(0xff38BDF8)
+                                    .withValues(alpha: 0.35)
                                 : Colors.white.withValues(alpha: 0.3),
                           ),
                         ),
@@ -784,7 +921,9 @@ class _DashboardState extends State<Dashboard> {
                           children: [
                             Icon(
                               Icons.qr_code_scanner_rounded,
-                              color: isDark ? const Color(0xff38BDF8) : Colors.white,
+                              color: isDark
+                                  ? const Color(0xff38BDF8)
+                                  : Colors.white,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -793,7 +932,9 @@ class _DashboardState extends State<Dashboard> {
                               style: GoogleFonts.montserrat(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? const Color(0xff38BDF8) : Colors.white,
+                                color: isDark
+                                    ? const Color(0xff38BDF8)
+                                    : Colors.white,
                               ),
                             ),
                           ],
