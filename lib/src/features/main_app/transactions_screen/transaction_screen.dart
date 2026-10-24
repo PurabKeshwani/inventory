@@ -8,6 +8,8 @@ import 'package:inventory/src/data/cartcomponent.dart';
 import 'package:inventory/src/features/authentication/controllers/componentController.dart';
 import 'package:inventory/src/features/main_app/cartscreen/cartscreen.dart';
 import 'package:inventory/src/features/main_app/transactions_screen/member_transactions_screen.dart';
+import 'package:inventory/src/data/model.dart';
+import 'package:inventory/src/services/component_lookup_service.dart';
 import 'package:inventory/src/utils/theme/theme.dart';
 import 'package:inventory/src/utils/inventory_barcode_scanner.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -26,6 +28,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
   late String compname = '';
   bool returnstate = false;
   bool _isProcessingScan = false; // prevents duplicate onDetect firings
+  bool _isProcessing = false; // guards duplicate lookup / submission attempts
+  String? _manualError; // inline manual-entry error message
   final ComponentController componentcontroller =
       Get.find<ComponentController>();
   final InventoryBarcodeScanner _scanner =
@@ -33,47 +37,15 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
   final transactionidcontroller = TextEditingController();
   final returnTransactionIdController = TextEditingController();
+  final _manualSkuController = TextEditingController();
 
   @override
   void dispose() {
     transactionidcontroller.dispose();
     returnTransactionIdController.dispose();
+    _manualSkuController.dispose();
     unawaited(_scanner.dispose());
     super.dispose();
-  }
-
-  Future<bool> checkStockAvailability(String skuid) async {
-    try {
-      if (componentcontroller.ClassName.value.isEmpty) {
-        return false;
-      }
-
-      final response = await Supabase.instance.client
-          .from(componentcontroller.ClassName.value)
-          .select()
-          .ilike('skuid', skuid)
-          .maybeSingle();
-
-      if (response != null) {
-        var stockValue = response['stock'];
-
-        int currentStock = 0;
-
-        if (stockValue != null) {
-          if (stockValue is String) {
-            currentStock = int.parse(stockValue);
-          } else if (stockValue is num) {
-            currentStock = stockValue.toInt();
-          }
-        }
-
-        return currentStock > 0;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      return false;
-    }
   }
 
   Future<void> fetchTransactionComponents(String transactionId) async {
@@ -155,67 +127,200 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 
   Future<void> _processBarcode(String scanResult) async {
-    final sanitized =
-        ComponentController.normalizeScannedIdentifier(scanResult);
-
+    _scanBarcode = ComponentLookupService.normalizeManualIdentifier(scanResult);
+    barcode = _scanBarcode;
     if (!mounted) return;
+    await _processIdentifier(scanResult, requireConfirmation: false);
+  }
+
+  /// Shared lookup -> validation -> cart workflow used by both barcode scan
+  /// and manual entry. Reuses the exact-SKU lookup for both entry methods.
+  Future<void> _processIdentifier(
+    String raw, {
+    required bool requireConfirmation,
+  }) async {
+    if (!mounted || _isProcessing) return;
+
+    final sku = ComponentLookupService.normalizeManualIdentifier(raw);
+    if (sku.isEmpty) {
+      _setManualError('Please enter a barcode or SKU.');
+      return;
+    }
 
     setState(() {
-      _scanBarcode = sanitized;
-      barcode = sanitized;
+      _isProcessing = true;
+      _manualError = null;
     });
 
+    ComponentLookupResult result;
     try {
-      await componentcontroller.skuidanalyze(barcode);
-
-      final hasStock = await checkStockAvailability(barcode);
-
-      if (!hasStock) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No stock available for this component'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      if (mounted) {
-        // Check if component with same SKUID already exists
-        bool componentExists = componentcontroller.Cartcomponents.any(
-            (component) => component.skuid == barcode);
-
-        if (componentExists) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Component already added to cart'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          return;
-        }
-
-        setState(() {
-          final newComponent = Cartcomponent(
-            compname: componentcontroller.CompName.value,
-            skuid: barcode,
-            Quantity: 1,
-          );
-          componentcontroller.Cartcomponents.add(newComponent);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error processing barcode: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      result = await ComponentLookupService().lookupComponentBySku(sku);
+    } catch (error) {
+      result = ComponentLookupError('Unexpected error: $error');
     }
+
+    if (!mounted) return;
+    setState(() => _isProcessing = false);
+
+    String? message;
+    Component? matched;
+    String? tableName;
+
+    if (result is ComponentLookupEmpty) {
+      message = 'Please enter a barcode or SKU.';
+    } else if (result is ComponentLookupNotFound) {
+      message = 'Component not found: "$sku".';
+    } else if (result is ComponentLookupAmbiguous) {
+      message = 'Multiple records match SKU "$sku". Contact an administrator.';
+    } else if (result is ComponentLookupError) {
+      message = result.message;
+    } else if (result is ComponentLookupFound) {
+      matched = result.component;
+      tableName = result.tableName;
+    }
+
+    if (message != null) {
+      _showSnackBar(message, color: Colors.red);
+      return;
+    }
+
+    if (matched == null || tableName == null) {
+      _showSnackBar('Component not found: "$sku".', color: Colors.red);
+      return;
+    }
+
+    // Out-of-stock check using the exact stock fetched during lookup.
+    if (matched.stock <= 0) {
+      _showSnackBar('No stock available for "${matched.name}" (SKU: $sku).',
+          color: Colors.red);
+      return;
+    }
+
+    // Manual entry requires explicit confirmation before staging.
+    bool add = true;
+    if (requireConfirmation) {
+      add = await _showConfirmComponentDialog(matched, tableName, sku) == true;
+      if (!mounted) return;
+    }
+    if (!add) return;
+
+    // Prevent duplicate cart entries.
+    final alreadyStaged = componentcontroller.Cartcomponents.any(
+      (component) => component.skuid == sku,
+    );
+    if (alreadyStaged) {
+      _showSnackBar(
+        'Component already added to cart',
+        color: Colors.orange,
+      );
+      return;
+    }
+
+    final comp = matched;
+    final tname = tableName;
+
+    // Mirror the controller state the checkout flow reads downstream.
+    componentcontroller.ClassName.value = tname;
+    componentcontroller.CompName.value = comp.name;
+    componentcontroller.Boxname.value = comp.boxNo;
+    componentcontroller.Quantity.value = comp.stock;
+
+    setState(() {
+      componentcontroller.Cartcomponents.add(Cartcomponent(
+        compname: comp.name,
+        skuid: sku,
+        Quantity: 1,
+      ));
+    });
+
+    _showSnackBar(
+      'Added "${comp.name}" (SKU: $sku) to cart',
+      color: Colors.green,
+    );
+  }
+
+  void _setManualError(String message) {
+    if (!mounted) return;
+    setState(() {
+      _manualError = message;
+      _isProcessing = false;
+    });
+  }
+
+  void _showSnackBar(String content, {Color color = Colors.red}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(content), backgroundColor: color),
+    );
+  }
+
+  Future<void> _findManual() async {
+    if (_isProcessing) return;
+    await _processIdentifier(_manualSkuController.text,
+        requireConfirmation: true);
+  }
+
+  Future<bool?> _showConfirmComponentDialog(
+    Component component,
+    String tableName,
+    String sku,
+  ) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final isDark = CAppTheme.isDark(dialogContext);
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xff1E293B) : Colors.white,
+          title: Text(
+            'Confirm Component',
+            style: GoogleFonts.montserrat(
+              color: CAppTheme.primaryTextColor(dialogContext),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                component.name,
+                style: GoogleFonts.montserrat(
+                  color: CAppTheme.primaryTextColor(dialogContext),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text('SKU: $sku',
+                  style: GoogleFonts.robotoMono(
+                    color: CAppTheme.secondaryTextColor(dialogContext),
+                  )),
+              Text('Box: ${component.boxNo}',
+                  style: GoogleFonts.lato(
+                    color: CAppTheme.secondaryTextColor(dialogContext),
+                  )),
+              Text('Class: $tableName',
+                  style: GoogleFonts.lato(
+                    color: CAppTheme.secondaryTextColor(dialogContext),
+                  )),
+              Text('Stock: ${component.stock}',
+                  style: GoogleFonts.lato(
+                    color: CAppTheme.secondaryTextColor(dialogContext),
+                  )),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Add to Cart'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _startBarcodeScan() async {
@@ -684,6 +789,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                             ),
                           ],
                         ),
+                        _buildManualEntryCard(),
                       ],
                     ),
                   ),
@@ -990,6 +1096,114 @@ class _TransactionScreenState extends State<TransactionScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildManualEntryCard() {
+    final isDark = CAppTheme.isDark(context);
+    final primaryText = CAppTheme.primaryTextColor(context);
+    final accentColor =
+        isDark ? const Color(0xff38BDF8) : const Color(0xff19335A);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: CAppTheme.cardDecoration(context, radius: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.input_rounded, size: 16, color: accentColor),
+              const SizedBox(width: 6),
+              Text(
+                'Enter Barcode/SKU Manually',
+                style: GoogleFonts.montserrat(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: primaryText,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _manualSkuController,
+                  onSubmitted: (_) => _findManual(),
+                  style: GoogleFonts.lato(
+                    fontSize: 13,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Type or paste barcode / SKU',
+                    hintStyle: GoogleFonts.lato(
+                      fontSize: 12,
+                      color:
+                          isDark ? const Color(0xff64748B) : Colors.grey[500],
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xff334155)
+                              : Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(
+                          color: isDark
+                              ? const Color(0xff334155)
+                              : Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xff19335A)),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 10),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                onPressed: _isProcessing ? null : () => _findManual(),
+                child: _isProcessing
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text(
+                        'Find Component',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+              ),
+            ],
+          ),
+          if (_manualError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _manualError!,
+              style: GoogleFonts.lato(
+                  fontSize: 11,
+                  color: Colors.red[700],
+                  fontWeight: FontWeight.w600),
+            ),
+          ],
+        ],
       ),
     );
   }
